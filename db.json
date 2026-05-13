@@ -1,0 +1,11 @@
+{
+  "empresas": [
+    {
+      "id": "empresa_demo",
+      "nome": "Operação Principal",
+      "telefone": "whatsapp_demo"
+    }
+  ],
+  "conversas": [],
+  "fechamentos": []
+}

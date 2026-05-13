@@ -1,0 +1,16 @@
+{
+  "name": "zaplens-mvp",
+  "version": "1.0.0",
+  "description": "MVP funcional do ZapLens com backend local",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "inicio": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}

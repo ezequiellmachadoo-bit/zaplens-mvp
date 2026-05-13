@@ -1,0 +1,2632 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZapLens | Central Inteligente</title>
+
+    <style>
+      :root {
+        --ink: #0f172a;
+        --muted: #64748b;
+        --line: #e2e8f0;
+        --bg: #f6f8fb;
+        --card: #fff;
+        --navy: #071a2f;
+        --navy2: #0b2538;
+        --teal: #0f766e;
+        --teal2: #14b8a6;
+        --tealbg: #e6fffb;
+        --blue: #2563eb;
+        --bluebg: #eff6ff;
+        --green: #15803d;
+        --greenbg: #ecfdf3;
+        --yellow: #b45309;
+        --yellowbg: #fffbeb;
+        --red: #b91c1c;
+        --redbg: #fef2f2;
+        --purple: #6d28d9;
+        --purplebg: #f5f3ff;
+        --gray: #475569;
+        --graybg: #f1f5f9;
+        --shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+        --radius: 18px;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial,
+          sans-serif;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        overflow: hidden;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font-family: inherit;
+      }
+
+      .screen {
+        display: none;
+        min-height: 100vh;
+      }
+
+      .screen.active {
+        display: block;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 950;
+        font-size: 26px;
+        letter-spacing: -0.8px;
+      }
+
+      .brand span {
+        color: var(--teal2);
+      }
+
+      .brand-mark {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, var(--teal), var(--blue));
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-weight: 950;
+        box-shadow: 0 14px 28px rgba(15, 118, 110, 0.22);
+        flex-shrink: 0;
+      }
+
+      .btn {
+        border: 0;
+        border-radius: 13px;
+        padding: 13px 16px;
+        font-size: 14px;
+        font-weight: 900;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: 0.18s;
+        white-space: nowrap;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, var(--teal), var(--teal2));
+        color: #fff;
+        box-shadow: 0 10px 22px rgba(15, 118, 110, 0.2);
+      }
+
+      .btn-secondary {
+        background: #fff;
+        color: #334155;
+        border: 1px solid var(--line);
+      }
+
+      .btn-secondary:hover {
+        background: #f8fafc;
+      }
+
+      .btn-full {
+        width: 100%;
+      }
+
+      .field {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .field label {
+        font-size: 13px;
+        font-weight: 850;
+        color: #334155;
+      }
+
+      .field input,
+      .field select,
+      .field textarea {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        padding: 13px 14px;
+        font-size: 14px;
+        outline: none;
+        background: #fff;
+        color: var(--ink);
+      }
+
+      .field input:focus,
+      .field select:focus,
+      .field textarea:focus {
+        border-color: var(--teal);
+        box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.12);
+      }
+
+      .login {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 1fr 460px;
+        background: #fff;
+      }
+
+      .login-hero {
+        padding: 64px;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        background: linear-gradient(
+            rgba(7, 26, 47, 0.88),
+            rgba(7, 26, 47, 0.92)
+          ),
+          radial-gradient(
+            circle at 20% 20%,
+            rgba(20, 184, 166, 0.32),
+            transparent 34%
+          ),
+          radial-gradient(
+            circle at 80% 70%,
+            rgba(37, 99, 235, 0.22),
+            transparent 35%
+          ),
+          linear-gradient(135deg, #071a2f, #0f2e42);
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        padding: 8px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        color: #cbd5e1;
+        font-size: 13px;
+        font-weight: 850;
+        margin-bottom: 22px;
+      }
+
+      .hero-copy {
+        max-width: 820px;
+      }
+
+      .hero-copy h1 {
+        font-size: clamp(42px, 5vw, 72px);
+        line-height: 0.98;
+        letter-spacing: -2.6px;
+        margin-bottom: 24px;
+      }
+
+      .hero-copy p {
+        font-size: 19px;
+        line-height: 1.65;
+        color: #cbd5e1;
+        max-width: 780px;
+      }
+
+      .proof-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-top: 42px;
+      }
+
+      .proof {
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 18px;
+        padding: 18px;
+      }
+
+      .proof strong {
+        display: block;
+        font-size: 28px;
+        margin-bottom: 6px;
+      }
+
+      .proof span {
+        font-size: 13px;
+        font-weight: 750;
+        color: #cbd5e1;
+      }
+
+      .login-panel {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 42px;
+        background: #fff;
+      }
+
+      .login-card {
+        width: 100%;
+        max-width: 380px;
+      }
+
+      .login-card h2 {
+        font-size: 32px;
+        line-height: 1.08;
+        letter-spacing: -1.1px;
+        margin: 28px 0 10px;
+        color: var(--navy);
+      }
+
+      .login-card p,
+      .mini {
+        color: var(--muted);
+        line-height: 1.6;
+        margin-bottom: 26px;
+      }
+
+      .mini {
+        font-size: 12.5px;
+        line-height: 1.5;
+        text-align: center;
+        margin-top: 18px;
+        margin-bottom: 0;
+      }
+
+      .setup-page {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 28px;
+        background: radial-gradient(
+            circle at top left,
+            rgba(20, 184, 166, 0.14),
+            transparent 35%
+          ),
+          linear-gradient(180deg, #fff, var(--bg));
+      }
+
+      .setup-card {
+        width: min(580px, 92vw);
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        padding: 34px;
+        box-shadow: var(--shadow);
+      }
+
+      .setup-card h1 {
+        font-size: 34px;
+        line-height: 1.08;
+        letter-spacing: -1.1px;
+        color: var(--navy);
+        margin: 26px 0 10px;
+      }
+
+      .setup-card p {
+        color: var(--muted);
+        line-height: 1.6;
+        margin-bottom: 24px;
+      }
+
+      .app {
+        height: 100vh;
+        display: grid;
+        grid-template-columns: 260px 350px minmax(420px, 1fr) 360px;
+        background: var(--bg);
+        overflow: hidden;
+        min-height: 0;
+      }
+
+      .main-menu {
+        background: var(--navy);
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .menu-top {
+        padding: 18px 16px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        flex-shrink: 0;
+      }
+
+      .menu-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      .menu-brand .brand-mark {
+        width: 42px;
+        height: 42px;
+      }
+
+      .menu-brand strong {
+        display: block;
+        font-size: 22px;
+        letter-spacing: -0.7px;
+      }
+
+      .menu-brand span {
+        color: #7dd3fc;
+      }
+
+      .menu-caption {
+        color: #94a3b8;
+        font-size: 12px;
+        line-height: 1.4;
+        font-weight: 700;
+      }
+
+      .menu-scroll {
+        padding: 12px 12px 14px;
+        overflow: auto;
+        flex: 1;
+        min-height: 0;
+      }
+
+      .menu-section {
+        margin: 12px 0 7px;
+        color: #8fb3c7;
+        font-size: 11px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: 0.9px;
+        padding: 0 8px;
+      }
+
+      .nav-btn {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        color: #cbd5e1;
+        display: grid;
+        grid-template-columns: 26px 1fr auto;
+        align-items: center;
+        gap: 9px;
+        padding: 10px;
+        border-radius: 13px;
+        cursor: pointer;
+        text-align: left;
+        font-weight: 850;
+        margin-bottom: 3px;
+        transition: 0.16s;
+      }
+
+      .nav-btn:hover,
+      .nav-btn.active {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+      }
+
+      .nav-icon {
+        width: 26px;
+        height: 26px;
+        border-radius: 9px;
+        display: grid;
+        place-items: center;
+        background: rgba(255, 255, 255, 0.08);
+        font-size: 13px;
+      }
+
+      .nav-btn.active .nav-icon {
+        background: rgba(20, 184, 166, 0.26);
+        color: #99f6e4;
+      }
+
+      .nav-title {
+        font-size: 13.5px;
+      }
+
+      .nav-desc {
+        display: block;
+        color: #94a3b8;
+        font-size: 11px;
+        font-weight: 700;
+        margin-top: 2px;
+        line-height: 1.25;
+      }
+
+      .nav-count {
+        min-width: 24px;
+        height: 22px;
+        padding: 0 7px;
+        display: grid;
+        place-items: center;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 950;
+        color: #e2e8f0;
+      }
+
+      .nav-count.red {
+        background: #ef4444;
+        color: #fff;
+      }
+      .nav-count.green {
+        background: #16a34a;
+        color: #fff;
+      }
+      .nav-count.yellow {
+        background: #f59e0b;
+        color: #fff;
+      }
+      .nav-count.blue {
+        background: #2563eb;
+        color: #fff;
+      }
+      .nav-count.gray {
+        background: #64748b;
+        color: #fff;
+      }
+
+      .menu-bottom {
+        padding: 14px 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        flex-shrink: 0;
+      }
+
+      .company-box {
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 12px;
+        margin-bottom: 10px;
+      }
+
+      .company-box strong {
+        display: block;
+        font-size: 13px;
+      }
+
+      .company-box span {
+        display: block;
+        color: #94a3b8;
+        font-size: 12px;
+        margin-top: 3px;
+      }
+
+      .inbox {
+        border-right: 1px solid var(--line);
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+      }
+
+      .inbox-head {
+        padding: 20px;
+        border-bottom: 1px solid var(--line);
+        flex-shrink: 0;
+      }
+
+      .inbox-head h2 {
+        font-size: 24px;
+        letter-spacing: -0.8px;
+        color: var(--navy);
+        margin-bottom: 4px;
+      }
+
+      .inbox-head p {
+        font-size: 13px;
+        color: var(--muted);
+        font-weight: 650;
+        line-height: 1.4;
+      }
+
+      .search {
+        margin-top: 14px;
+        position: relative;
+      }
+
+      .search input {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 12px 13px 12px 38px;
+        font-size: 14px;
+        outline: none;
+        background: #f8fafc;
+      }
+
+      .search span {
+        position: absolute;
+        left: 13px;
+        top: 11px;
+        color: var(--muted);
+      }
+
+      .filters {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--line);
+        flex-shrink: 0;
+      }
+
+      .chip {
+        border: 1px solid var(--line);
+        background: #fff;
+        color: #475569;
+        padding: 8px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 850;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .chip.active {
+        background: var(--teal);
+        border-color: var(--teal);
+        color: #fff;
+      }
+
+      .chat-list {
+        overflow: auto;
+        padding: 10px;
+        flex: 1;
+        min-height: 0;
+      }
+
+      .chat-item {
+        border: 1px solid transparent;
+        border-radius: 17px;
+        padding: 13px;
+        cursor: pointer;
+        display: grid;
+        gap: 8px;
+        margin-bottom: 8px;
+        background: #fff;
+      }
+
+      .chat-item:hover {
+        background: #f8fafc;
+      }
+
+      .chat-item.active {
+        background: var(--tealbg);
+        border-color: #99f6e4;
+      }
+
+      .chat-item.resolved {
+        opacity: 0.55;
+        filter: grayscale(0.35);
+      }
+
+      .chat-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: flex-start;
+      }
+
+      .chat-top strong {
+        font-size: 14px;
+        color: var(--navy);
+      }
+
+      .time {
+        font-size: 11px;
+        color: var(--muted);
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .chat-msg {
+        color: #475569;
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .chat-meta {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 9px;
+        border-radius: 999px;
+        font-size: 11.5px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .badge.green {
+        background: var(--greenbg);
+        color: var(--green);
+      }
+      .badge.yellow {
+        background: var(--yellowbg);
+        color: var(--yellow);
+      }
+      .badge.red {
+        background: var(--redbg);
+        color: var(--red);
+      }
+      .badge.blue {
+        background: var(--bluebg);
+        color: var(--blue);
+      }
+      .badge.purple {
+        background: var(--purplebg);
+        color: var(--purple);
+      }
+      .badge.gray {
+        background: var(--graybg);
+        color: var(--gray);
+      }
+
+      .value {
+        font-size: 12px;
+        font-weight: 900;
+        color: var(--navy);
+        margin-left: auto;
+      }
+
+      .conversation {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+        height: 100vh;
+        background: #f8fafc;
+        overflow: hidden;
+      }
+
+      .conv-head {
+        height: 78px;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 22px;
+        flex-shrink: 0;
+      }
+
+      .client {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 15px;
+        background: linear-gradient(135deg, var(--teal), var(--blue));
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-weight: 950;
+      }
+
+      .client strong {
+        display: block;
+        color: var(--navy);
+      }
+
+      .client span {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .conv-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .messages {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .bubble {
+        max-width: 72%;
+        padding: 12px 14px;
+        border-radius: 18px;
+        font-size: 14px;
+        line-height: 1.45;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+      }
+
+      .bubble.client-bubble {
+        align-self: flex-start;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-bottom-left-radius: 6px;
+      }
+
+      .bubble.agent-bubble {
+        align-self: flex-end;
+        background: #dffaf4;
+        border: 1px solid #b5f5e6;
+        border-bottom-right-radius: 6px;
+      }
+
+      .bubble small {
+        display: block;
+        margin-top: 7px;
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .system-note {
+        align-self: center;
+        background: #eef6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 850;
+      }
+
+      .suggestion {
+        margin: 0 22px 14px;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 14px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+        flex-shrink: 0;
+      }
+
+      .suggestion-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .suggestion strong {
+        font-size: 13px;
+        color: var(--navy);
+      }
+
+      .suggestion p {
+        font-size: 13.5px;
+        color: #334155;
+        line-height: 1.5;
+      }
+
+      .composer {
+        background: #fff;
+        border-top: 1px solid var(--line);
+        padding: 14px 18px;
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+        flex-shrink: 0;
+        position: relative;
+        bottom: 0;
+        z-index: 20;
+        box-shadow: 0 -10px 22px rgba(15, 23, 42, 0.04);
+      }
+
+      .composer textarea {
+        flex: 1;
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 15px;
+        padding: 12px 14px;
+        min-height: 46px;
+        max-height: 110px;
+        resize: none;
+        outline: none;
+        font-size: 14px;
+        display: block;
+      }
+
+      .composer textarea:focus {
+        border-color: var(--teal);
+        box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.1);
+      }
+
+      .sidepanel {
+        background: #fff;
+        border-left: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+      }
+
+      .sidepanel-head {
+        padding: 20px;
+        border-bottom: 1px solid var(--line);
+        flex-shrink: 0;
+      }
+
+      .sidepanel-head h3 {
+        font-size: 20px;
+        letter-spacing: -0.5px;
+        color: var(--navy);
+        margin-bottom: 4px;
+      }
+
+      .sidepanel-head p {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.4;
+      }
+
+      .side-content {
+        padding: 16px;
+        overflow: auto;
+        flex: 1;
+        min-height: 0;
+      }
+
+      .info-card {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 14px;
+        background: #fff;
+        margin-bottom: 12px;
+      }
+
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid #f1f5f9;
+      }
+
+      .info-row:last-child {
+        border-bottom: 0;
+      }
+
+      .info-row span {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 850;
+      }
+
+      .info-row strong {
+        font-size: 13px;
+        color: var(--navy);
+        text-align: right;
+      }
+
+      .action-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .action-grid .btn {
+        padding: 11px 10px;
+        font-size: 12px;
+      }
+
+      .page-modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        background: rgba(15, 23, 42, 0.38);
+        z-index: 40;
+        align-items: center;
+        justify-content: center;
+        padding: 28px;
+      }
+
+      .page-modal.active {
+        display: flex;
+      }
+
+      .modal-card {
+        width: min(1180px, 96vw);
+        max-height: 88vh;
+        background: #fff;
+        border-radius: 22px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .modal-head {
+        padding: 22px 24px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: flex-start;
+      }
+
+      .modal-head h2 {
+        font-size: 30px;
+        letter-spacing: -1px;
+        color: var(--navy);
+        margin-bottom: 4px;
+      }
+
+      .modal-head p {
+        color: var(--muted);
+        font-weight: 650;
+        line-height: 1.5;
+      }
+
+      .modal-body {
+        padding: 22px;
+        overflow: auto;
+      }
+
+      .grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .kpis {
+        grid-template-columns: repeat(4, 1fr);
+        margin-bottom: 16px;
+      }
+
+      .card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 17px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+      }
+
+      .kpi small {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 900;
+        margin-bottom: 8px;
+      }
+
+      .kpi h3 {
+        font-size: 27px;
+        letter-spacing: -0.9px;
+        color: var(--navy);
+      }
+
+      .kpi p {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 750;
+        margin-top: 8px;
+      }
+
+      .table-wrap {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        overflow: auto;
+        background: #fff;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 900px;
+      }
+
+      th,
+      td {
+        padding: 13px 14px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+        font-size: 13.5px;
+      }
+
+      th {
+        background: #f8fafc;
+        color: var(--muted);
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.65px;
+        font-weight: 950;
+      }
+
+      td {
+        color: #334155;
+        line-height: 1.45;
+      }
+
+      .journey {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+
+      .step {
+        padding: 9px 11px;
+        background: #f8fafc;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 900;
+        color: #334155;
+      }
+
+      .step.done {
+        background: var(--greenbg);
+        color: var(--green);
+        border-color: #bbf7d0;
+      }
+
+      .new-message-btn {
+        margin-top: 12px;
+        width: 100%;
+        justify-content: center;
+      }
+
+      .new-message-hint {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 11.5px;
+        line-height: 1.35;
+      }
+
+      .empty-state {
+        padding: 24px 16px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      @media (max-width: 1380px) {
+        .app {
+          grid-template-columns: 230px 320px minmax(390px, 1fr) 330px;
+        }
+      }
+
+      @media (max-width: 1120px) {
+        body {
+          overflow: auto;
+        }
+
+        .app {
+          grid-template-columns: 1fr;
+          height: auto;
+          min-height: 100vh;
+          overflow: auto;
+        }
+
+        .main-menu {
+          height: auto;
+        }
+
+        .menu-scroll {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 6px;
+          max-height: none;
+        }
+
+        .menu-section {
+          grid-column: 1 / -1;
+        }
+
+        .inbox {
+          height: 38vh;
+        }
+
+        .conversation {
+          height: 62vh;
+        }
+
+        .sidepanel {
+          display: none;
+        }
+
+        .bubble {
+          max-width: 88%;
+        }
+      }
+
+      @media (max-width: 860px) {
+        .login {
+          grid-template-columns: 1fr;
+        }
+
+        .login-hero {
+          display: none;
+        }
+
+        .login-panel {
+          min-height: 100vh;
+        }
+
+        .kpis {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <section id="loginScreen" class="screen active">
+      <div class="login">
+        <div class="login-hero">
+          <div class="brand">
+            <span class="brand-mark">ZL</span>Zap<span>Lens</span>
+          </div>
+          <div class="hero-copy">
+            <div class="eyebrow">
+              Central inteligente de conversas e acompanhamentos
+            </div>
+            <h1>Enxergue o que importa nas conversas da sua empresa.</h1>
+            <p>
+              O WhatsApp mostra mensagens. O ZapLens mostra o que precisa ser
+              resolvido: respostas, retornos, cobranças, documentos, orçamentos,
+              agendamentos e fechamentos.
+            </p>
+            <div class="proof-grid">
+              <div class="proof">
+                <strong>12</strong><span>conversas precisam de resposta</span>
+              </div>
+              <div class="proof">
+                <strong>R$ 18.450</strong><span>em orçamentos em aberto</span>
+              </div>
+              <div class="proof">
+                <strong>7</strong><span>retornos prometidos hoje</span>
+              </div>
+            </div>
+          </div>
+          <div style="color: #94a3b8; font-size: 13px; font-weight: 750">
+            Entre duas vezes por dia e saiba exatamente quem responder, cobrar,
+            acompanhar e concluir.
+          </div>
+        </div>
+
+        <div class="login-panel">
+          <div class="login-card">
+            <div class="brand">
+              <span class="brand-mark">ZL</span>Zap<span>Lens</span>
+            </div>
+            <h2>Acesse sua central</h2>
+            <p>
+              Organize conversas por prioridade, categoria, próxima ação e
+              resultado.
+            </p>
+            <div class="field">
+              <label>E-mail</label>
+              <input id="loginEmail" type="email" value="dono@empresa.com" />
+            </div>
+            <div class="field">
+              <label>Senha</label>
+              <input id="loginPassword" type="password" value="123456" />
+            </div>
+            <button
+              id="loginBtn"
+              class="btn btn-primary btn-full"
+              type="button"
+            >
+              Entrar no ZapLens
+            </button>
+            <button
+              id="accessPanelBtn"
+              class="btn btn-secondary btn-full"
+              type="button"
+              style="margin-top: 10px"
+            >
+              Acessar painel
+            </button>
+            <p class="mini">
+              Central operacional para acompanhar conversas, retornos e
+              resultados.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="setupScreen" class="screen">
+      <div class="setup-page">
+        <div class="setup-card">
+          <div class="brand">
+            <span class="brand-mark">ZL</span>Zap<span>Lens</span>
+          </div>
+          <h1>Configure sua operação</h1>
+          <p>
+            Escolha o perfil do seu negócio para o ZapLens organizar conversas,
+            acompanhamentos e resultados.
+          </p>
+          <div class="field">
+            <label>Nome da empresa</label>
+            <input id="companyInput" value="Operação Principal" />
+          </div>
+          <div class="field">
+            <label>Segmento</label>
+            <select id="segmentInput">
+              <option>Clínica/Estética</option>
+              <option>Loja/Varejo</option>
+              <option>Oficina</option>
+              <option selected>Prestador de serviço</option>
+              <option>Empreiteiro/Construção</option>
+              <option>Escola/Curso</option>
+              <option>Imobiliária</option>
+              <option>Feirante/Pequeno vendedor</option>
+              <option>Outro</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Tamanho da equipe de atendimento</label>
+            <select>
+              <option>1 pessoa</option>
+              <option selected>2 a 5 pessoas</option>
+              <option>6 a 15 pessoas</option>
+              <option>Mais de 15 pessoas</option>
+            </select>
+          </div>
+          <button id="setupBtn" class="btn btn-primary btn-full" type="button">
+            Acessar central
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="appScreen" class="screen">
+      <div class="app">
+        <aside class="main-menu">
+          <div class="menu-top">
+            <div class="menu-brand">
+              <span class="brand-mark">ZL</span>
+              <div>
+                <strong>Zap<span>Lens</span></strong>
+              </div>
+            </div>
+            <p class="menu-caption">
+              Responder, acompanhar, cobrar e fechar sem perder conversas.
+            </p>
+          </div>
+
+          <div class="menu-scroll" id="mainMenu"></div>
+
+          <div class="menu-bottom">
+            <div class="company-box">
+              <strong id="companyNameBox">Operação Principal</strong>
+              <span>Operação conectada ao WhatsApp</span>
+            </div>
+            <button
+              id="resetBtn"
+              class="btn btn-secondary btn-full"
+              type="button"
+              style="margin-bottom: 8px"
+            >
+              Limpar dados
+            </button>
+            <button
+              id="logoutBtn"
+              class="btn btn-secondary btn-full"
+              type="button"
+            >
+              Sair
+            </button>
+          </div>
+        </aside>
+
+        <aside class="inbox">
+          <div class="inbox-head">
+            <h2 id="inboxTitle">Hoje no ZapLens</h2>
+            <p id="inboxSubtitle">
+              Veja o que precisa ser respondido, acompanhado, cobrado ou
+              concluído.
+            </p>
+            <div class="search">
+              <span>⌕</span>
+              <input
+                id="searchInput"
+                placeholder="Buscar cliente, assunto ou valor..."
+              />
+            </div>
+            <button
+              id="newMessageBtn"
+              class="btn btn-primary new-message-btn"
+              type="button"
+            >
+              + Nova conversa recebida
+            </button>
+            <div class="new-message-hint">
+              Registra uma nova conversa recebida pelo WhatsApp.
+            </div>
+          </div>
+
+          <div class="filters" id="filters">
+            <button class="chip active" data-filter="Todos">Todos</button>
+            <button class="chip" data-filter="Sem resposta">
+              Sem resposta
+            </button>
+            <button class="chip" data-filter="Orçamento">Orçamento</button>
+            <button class="chip" data-filter="Cobrança">Cobrança</button>
+            <button class="chip" data-filter="Documento">Documento</button>
+            <button class="chip" data-filter="Agendamento">Agendamento</button>
+            <button class="chip" data-filter="Risco">Risco</button>
+            <button class="chip" data-filter="Fechamento">Fechamento</button>
+          </div>
+
+          <div class="chat-list" id="chatList"></div>
+        </aside>
+
+        <main class="conversation">
+          <div class="conv-head">
+            <div class="client">
+              <div class="avatar" id="clientAvatar">MS</div>
+              <div>
+                <strong id="clientName">Maria Souza</strong>
+                <span id="clientInfo">Orçamento • lead quente parado</span>
+              </div>
+            </div>
+            <div class="conv-actions">
+              <button class="btn btn-secondary" id="scheduleBtn" type="button">
+                Agendar retorno
+              </button>
+              <button class="btn btn-primary" id="closeDealBtn" type="button">
+                Registrar fechamento
+              </button>
+            </div>
+          </div>
+
+          <div class="messages" id="messages"></div>
+
+          <div class="suggestion" id="suggestionBox">
+            <div class="suggestion-top">
+              <strong>Resposta sugerida</strong>
+              <button
+                class="btn btn-secondary"
+                id="useSuggestionBtn"
+                type="button"
+                style="padding: 8px 10px; font-size: 12px"
+              >
+                Usar texto
+              </button>
+            </div>
+            <p id="suggestionText"></p>
+          </div>
+
+          <div class="composer">
+            <button class="btn btn-secondary" type="button">Anexar</button>
+            <textarea
+              id="replyInput"
+              placeholder="Digite uma resposta estratégica..."
+            ></textarea>
+            <button class="btn btn-primary" id="sendBtn" type="button">
+              Enviar
+            </button>
+          </div>
+        </main>
+
+        <aside class="sidepanel">
+          <div class="sidepanel-head">
+            <h3>Acompanhamento</h3>
+            <p>Não é só responder. É acompanhar até resolver.</p>
+          </div>
+
+          <div class="side-content">
+            <div class="info-card">
+              <div class="info-row">
+                <span>Categoria</span
+                ><strong id="trackCategory">Orçamento</strong>
+              </div>
+              <div class="info-row">
+                <span>Status</span
+                ><strong id="trackStatus">Aguardando envio</strong>
+              </div>
+              <div class="info-row">
+                <span>Responsável</span><strong id="trackOwner">Ana</strong>
+              </div>
+              <div class="info-row">
+                <span>Próxima ação</span
+                ><strong id="trackAction">Enviar orçamento</strong>
+              </div>
+              <div class="info-row">
+                <span>Prazo</span><strong id="trackDue">Hoje às 16h</strong>
+              </div>
+              <div class="info-row">
+                <span>Valor potencial</span
+                ><strong id="trackValue">R$ 1.200</strong>
+              </div>
+              <div class="info-row">
+                <span>Risco</span
+                ><strong id="trackRisk">Lead quente parado</strong>
+              </div>
+            </div>
+
+            <div class="info-card">
+              <strong
+                style="color: var(--navy); display: block; margin-bottom: 8px"
+                >Trilha da conversa</strong
+              >
+              <div class="journey" id="journey"></div>
+            </div>
+
+            <div class="info-card">
+              <strong
+                style="color: var(--navy); display: block; margin-bottom: 10px"
+                >Ações rápidas</strong
+              >
+              <div class="action-grid">
+                <button
+                  id="quickResolveBtn"
+                  class="btn btn-secondary"
+                  type="button"
+                >
+                  Resolver
+                </button>
+                <button
+                  id="quickReturnBtn"
+                  class="btn btn-secondary"
+                  type="button"
+                >
+                  Retorno
+                </button>
+                <button
+                  id="quickChargeBtn"
+                  class="btn btn-secondary"
+                  type="button"
+                >
+                  Cobrança
+                </button>
+                <button
+                  id="quickDocBtn"
+                  class="btn btn-secondary"
+                  type="button"
+                >
+                  Documento
+                </button>
+                <button
+                  id="quickTransferBtn"
+                  class="btn btn-secondary"
+                  type="button"
+                >
+                  Transferir
+                </button>
+                <button
+                  id="quickCloseBtn"
+                  class="btn btn-primary"
+                  type="button"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+
+            <div class="info-card">
+              <strong
+                style="color: var(--navy); display: block; margin-bottom: 8px"
+                >Resumo inteligente</strong
+              >
+              <p
+                id="smartSummary"
+                style="color: var(--muted); font-size: 13.5px; line-height: 1.6"
+              ></p>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <div class="page-modal" id="modal">
+      <div class="modal-card">
+        <div class="modal-head">
+          <div>
+            <h2 id="modalTitle">Hoje no ZapLens</h2>
+            <p id="modalSubtitle">Resumo da operação.</p>
+          </div>
+          <button class="btn btn-secondary" id="closeModalBtn" type="button">
+            Fechar
+          </button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+      </div>
+    </div>
+
+    <script>
+      const API_BASE = '';
+
+      const state = {
+        currentView: 'today',
+        currentFilter: 'Todos',
+        currentChat: 0,
+      };
+
+      let chats = [];
+      let fechamentos = [];
+      let companyName = 'Operação Principal';
+      let backendLoaded = false;
+
+      const menuGroups = [
+        {
+          title: 'Rotina do dia',
+          items: [
+            ['today', '⌁', 'Hoje', 'O que resolver agora'],
+            ['conversas', '◌', 'Conversas', 'Inbox por categoria'],
+            [
+              'acompanhamentos',
+              '↻',
+              'Acompanhamentos',
+              'Retornos e pendências',
+            ],
+          ],
+        },
+        {
+          title: 'Operação',
+          items: [
+            ['orcamentos', 'R$', 'Orçamentos', 'Pedidos e propostas'],
+            ['cobrancas', '◈', 'Cobranças', 'Pagamentos e promessas'],
+            ['documentos', '▣', 'Documentos', 'Recebidos e pendentes'],
+            ['agendamentos', '◷', 'Agendamentos', 'Confirmar e remarcar'],
+          ],
+        },
+        {
+          title: 'Resultado',
+          items: [
+            ['fechamentos', '✓', 'Fechamentos', 'Conversas que viraram venda'],
+            ['relatorios', '▰', 'Relatórios', 'Indicadores da operação'],
+          ],
+        },
+        {
+          title: 'Sistema',
+          items: [
+            ['configuracoes', '⚙', 'Configurações', 'Regras e mensagens'],
+          ],
+        },
+      ];
+
+      const moduleBase = {
+        relatorios: {
+          title: 'Relatórios',
+          subtitle:
+            'Indicadores simples para o dono enxergar atendimento, acompanhamento e resultado.',
+          kpis: [
+            ['34min', 'tempo médio resposta', 'meta: 15min'],
+            ['86', 'conversas resolvidas', '7 dias'],
+            ['18%', 'taxa de fechamento', 'orçamentos'],
+            ['R$ 22.370', 'valor fechado', 'mês'],
+          ],
+          tableTitle: 'Indicadores por responsável',
+          headers: [
+            'Responsável',
+            'Conversas',
+            'Pendências',
+            'Orçamentos',
+            'Fechamentos',
+            'Tempo resposta',
+            'Status',
+          ],
+          rows: [
+            ['Ana', '42', '8', '12', 'R$ 8.450', '22min', ['Boa', 'green']],
+            [
+              'Carlos',
+              '31',
+              '6',
+              '8',
+              'R$ 6.900',
+              '38min',
+              ['Atenção', 'yellow'],
+            ],
+            [
+              'Financeiro',
+              '18',
+              '5',
+              '-',
+              'R$ 4.820',
+              '1h10',
+              ['Atenção', 'yellow'],
+            ],
+          ],
+        },
+        configuracoes: {
+          title: 'Configurações',
+          subtitle: 'Regras de alerta, categorias, equipe e mensagens prontas.',
+          kpis: [
+            ['9', 'categorias ativas', 'padrão'],
+            ['4', 'responsáveis', 'equipe'],
+            ['15min', 'alerta sem resposta', 'configurado'],
+            ['8', 'modelos de mensagem', 'prontos'],
+          ],
+          tableTitle: 'Regras inteligentes',
+          headers: ['Regra', 'Condição', 'Ação', 'Status'],
+          rows: [
+            [
+              'Sem resposta',
+              'Mais de 2h sem retorno',
+              'Marcar como Atenção',
+              ['Ativa', 'green'],
+            ],
+            [
+              'Orçamento enviado',
+              '24h sem resposta',
+              'Criar follow-up',
+              ['Ativa', 'green'],
+            ],
+            [
+              'Pagamento prometido',
+              'Data atual',
+              'Entrar em Cobranças do dia',
+              ['Ativa', 'green'],
+            ],
+            [
+              'Reclamação',
+              'Palavras de risco',
+              'Marcar como Prioridade alta',
+              ['Ativa', 'green'],
+            ],
+          ],
+        },
+      };
+
+      function fallbackData() {
+        chats = [
+          {
+            id: 'fallback-1',
+            name: 'Maria Souza',
+            initials: 'MS',
+            phone: '5548999990001',
+            category: 'Orçamento',
+            status: 'Aguardando envio de proposta',
+            priority: 'Alta',
+            priorityClass: 'red',
+            last: 'Pode me mandar o orçamento?',
+            time: '2h',
+            value: 'R$ 1.200',
+            owner: 'Ana',
+            action: 'Enviar orçamento',
+            due: 'Hoje às 16h',
+            risk: 'Lead quente parado',
+            info: 'Orçamento • lead quente parado',
+            summary:
+              'Maria pediu orçamento para um serviço e ainda não recebeu proposta.',
+            journey: ['Chegou', 'Qualificado', 'Proposta pendente'],
+            messages: [
+              ['client', 'Olá, quero fazer um orçamento.', '09:12'],
+              ['agent', 'Claro, me passa mais detalhes do serviço?', '09:18'],
+              [
+                'client',
+                'Seria para reformar um banheiro pequeno. Pode me mandar o orçamento?',
+                '09:22',
+              ],
+            ],
+            suggestion:
+              'Perfeito. Para montar um orçamento mais preciso, me confirma a metragem aproximada, cidade/bairro e quando gostaria de iniciar?',
+          },
+        ];
+        fechamentos = [];
+      }
+
+      async function apiGet(path) {
+        const response = await fetch(API_BASE + path);
+        if (!response.ok) throw new Error('Falha ao buscar dados da API.');
+        return response.json();
+      }
+
+      async function apiPost(path, body = {}) {
+        const response = await fetch(API_BASE + path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || data.success === false) {
+          throw new Error(data.error || 'Falha ao salvar dados na API.');
+        }
+
+        return data;
+      }
+
+      async function carregarDadosDoBackend() {
+        try {
+          const data = await apiGet('/api/conversations');
+          chats = data.conversas || [];
+          fechamentos = data.fechamentos || [];
+          backendLoaded = true;
+
+          if (state.currentChat >= chats.length) state.currentChat = 0;
+
+          renderMenu();
+          renderChatList();
+          renderConversation();
+        } catch (error) {
+          console.error(error);
+
+          if (!chats.length) fallbackData();
+
+          renderMenu();
+          renderChatList();
+          renderConversation();
+
+          const chatList = document.getElementById('chatList');
+          if (chatList && !backendLoaded) {
+            const aviso = document.createElement('div');
+            aviso.className = 'empty-state';
+            aviso.innerHTML =
+              'Servidor ainda não respondeu. O painel abriu com dados temporários.';
+            chatList.prepend(aviso);
+          }
+        }
+      }
+
+      function isResolved(chat) {
+        return chat.status === 'Resolvido';
+      }
+
+      function badge(value) {
+        return Array.isArray(value)
+          ? `<span class="badge ${value[1]}">● ${value[0]}</span>`
+          : value || '-';
+      }
+
+      function switchScreen(id) {
+        document
+          .querySelectorAll('.screen')
+          .forEach((screen) => screen.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+      }
+
+      function abrirPainel() {
+        companyName =
+          document.getElementById('companyInput')?.value ||
+          companyName ||
+          'Operação Principal';
+        const companyBox = document.getElementById('companyNameBox');
+        if (companyBox) companyBox.textContent = companyName;
+
+        switchScreen('appScreen');
+        renderMenu();
+        renderChatList();
+        renderConversation();
+
+        carregarDadosDoBackend();
+      }
+
+      function setActiveChip(filter) {
+        document.querySelectorAll('.chip').forEach((chip) => {
+          chip.classList.toggle('active', chip.dataset.filter === filter);
+        });
+      }
+
+      function getMenuCounts() {
+        return {
+          today: chats.filter((chat) => !isResolved(chat)).length,
+          conversas: chats.length,
+          acompanhamentos: chats.filter(
+            (chat) =>
+              !isResolved(chat) &&
+              (chat.status.includes('Retorno') ||
+                chat.status.includes('Respondido') ||
+                chat.status.includes('pendente') ||
+                chat.status.includes('Aguardando') ||
+                chat.status.includes('Promessa'))
+          ).length,
+          orcamentos: chats.filter(
+            (chat) => chat.category === 'Orçamento' && !isResolved(chat)
+          ).length,
+          cobrancas: chats.filter(
+            (chat) => chat.category === 'Cobrança' && !isResolved(chat)
+          ).length,
+          documentos: chats.filter(
+            (chat) => chat.category === 'Documento' && !isResolved(chat)
+          ).length,
+          agendamentos: chats.filter(
+            (chat) => chat.category === 'Agendamento' && !isResolved(chat)
+          ).length,
+          fechamentos: fechamentos.length,
+          relatorios: '',
+          configuracoes: '',
+        };
+      }
+
+      function getMenuColor(key, count) {
+        if (count === '' || count === undefined) return '';
+        if (key === 'today' && Number(count) > 0) return 'red';
+        if (key === 'acompanhamentos' && Number(count) > 0) return 'yellow';
+        if (key === 'fechamentos') return 'green';
+        return 'blue';
+      }
+
+      function renderMenu() {
+        const menu = document.getElementById('mainMenu');
+        if (!menu) return;
+
+        const counts = getMenuCounts();
+
+        menu.innerHTML = menuGroups
+          .map(
+            (group) =>
+              `<div class="menu-section">${group.title}</div>${group.items
+                .map((item) => {
+                  const key = item[0];
+                  const count = counts[key];
+                  const color = getMenuColor(key, count);
+
+                  return `
+                    <button class="nav-btn ${
+                      key === state.currentView ? 'active' : ''
+                    }" type="button" data-view="${key}">
+                      <span class="nav-icon">${item[1]}</span>
+                      <span>
+                        <span class="nav-title">${item[2]}</span>
+                        <span class="nav-desc">${item[3]}</span>
+                      </span>
+                      ${
+                        count !== '' && count !== undefined
+                          ? `<span class="nav-count ${color}">${count}</span>`
+                          : '<span></span>'
+                      }
+                    </button>
+                  `;
+                })
+                .join('')}`
+          )
+          .join('');
+
+        document.querySelectorAll('.nav-btn').forEach((button) => {
+          button.addEventListener('click', () =>
+            changeView(button.dataset.view)
+          );
+        });
+      }
+
+      function changeView(view) {
+        state.currentView = view;
+
+        const titles = {
+          today: ['Hoje no ZapLens', 'Pendências que ainda precisam de ação.'],
+          conversas: ['Todas as Conversas', 'Histórico completo de conversas.'],
+          acompanhamentos: [
+            'Acompanhamentos',
+            'Conversas que já foram respondidas, mas ainda precisam de ação.',
+          ],
+          orcamentos: ['Orçamentos', 'Pedidos e propostas em aberto.'],
+          cobrancas: [
+            'Cobranças',
+            'Promessas de pagamento e cobranças pendentes.',
+          ],
+          documentos: [
+            'Documentos',
+            'Documentos recebidos, pendentes ou aguardando conferência.',
+          ],
+          agendamentos: [
+            'Agendamentos',
+            'Confirmações, visitas, horários e reagendamentos.',
+          ],
+        };
+
+        if (titles[view]) {
+          document.getElementById('inboxTitle').textContent = titles[view][0];
+          document.getElementById('inboxSubtitle').textContent =
+            titles[view][1];
+          state.currentFilter = 'Todos';
+          setActiveChip('Todos');
+          renderMenu();
+          renderChatList();
+          renderConversation();
+          return;
+        }
+
+        renderModal(view);
+        renderMenu();
+      }
+
+      function renderChatList() {
+        const chatList = document.getElementById('chatList');
+        if (!chatList) return;
+
+        const searchInput = document.getElementById('searchInput');
+        const search = (searchInput?.value || '').toLowerCase();
+
+        const filtered = chats
+          .filter((chat) => {
+            let viewMatch = true;
+
+            if (state.currentView === 'today') viewMatch = !isResolved(chat);
+            if (state.currentView === 'orcamentos')
+              viewMatch = chat.category === 'Orçamento' && !isResolved(chat);
+            if (state.currentView === 'cobrancas')
+              viewMatch = chat.category === 'Cobrança' && !isResolved(chat);
+            if (state.currentView === 'documentos')
+              viewMatch = chat.category === 'Documento' && !isResolved(chat);
+            if (state.currentView === 'agendamentos')
+              viewMatch = chat.category === 'Agendamento' && !isResolved(chat);
+
+            if (state.currentView === 'acompanhamentos') {
+              viewMatch =
+                !isResolved(chat) &&
+                (chat.status.includes('Retorno') ||
+                  chat.status.includes('Respondido') ||
+                  chat.status.includes('pendente') ||
+                  chat.status.includes('Aguardando') ||
+                  chat.status.includes('Promessa'));
+            }
+
+            let filterMatch =
+              state.currentFilter === 'Todos' ||
+              chat.category === state.currentFilter ||
+              chat.status.includes(state.currentFilter);
+
+            if (state.currentFilter === 'Sem resposta') {
+              const lastMessage = chat.messages?.[chat.messages.length - 1];
+              filterMatch =
+                lastMessage && lastMessage[0] === 'client' && !isResolved(chat);
+            }
+
+            const searchMatch =
+              !search ||
+              `${chat.name} ${chat.category} ${chat.status} ${chat.last} ${chat.value}`
+                .toLowerCase()
+                .includes(search);
+
+            return viewMatch && filterMatch && searchMatch;
+          })
+          .sort((a, b) => {
+            if (isResolved(a) && !isResolved(b)) return 1;
+            if (!isResolved(a) && isResolved(b)) return -1;
+            if (a.priorityClass === 'red' && b.priorityClass !== 'red')
+              return -1;
+            if (a.priorityClass !== 'red' && b.priorityClass === 'red')
+              return 1;
+            return 0;
+          });
+
+        if (!filtered.length) {
+          chatList.innerHTML = `
+            <div class="empty-state">
+              Nenhuma conversa encontrada aqui.<br>
+              Tente outro filtro ou volte para “Conversas”.
+            </div>
+          `;
+          return;
+        }
+
+        chatList.innerHTML = filtered
+          .map((chat) => {
+            const index = chats.findIndex((item) => item.id === chat.id);
+
+            return `
+              <div class="chat-item ${
+                index === state.currentChat ? 'active' : ''
+              } ${isResolved(chat) ? 'resolved' : ''}" data-index="${index}">
+                <div class="chat-top">
+                  <strong>${chat.name}</strong>
+                  <span class="time">${chat.time || 'agora'}</span>
+                </div>
+                <div class="chat-msg">${chat.last || ''}</div>
+                <div class="chat-meta">
+                  <span class="badge blue">${chat.category || 'Conversa'}</span>
+                  <span class="badge ${chat.priorityClass || 'yellow'}">${
+              chat.status || 'Nova mensagem'
+            }</span>
+                  ${
+                    chat.value ? `<span class="value">${chat.value}</span>` : ''
+                  }
+                </div>
+              </div>
+            `;
+          })
+          .join('');
+
+        document.querySelectorAll('.chat-item').forEach((item) => {
+          item.addEventListener('click', () => {
+            state.currentChat = Number(item.dataset.index);
+            renderChatList();
+            renderConversation();
+          });
+        });
+      }
+
+      function renderConversation() {
+        const chat = chats[state.currentChat];
+
+        if (!chat) {
+          document.getElementById('clientAvatar').textContent = '-';
+          document.getElementById('clientName').textContent =
+            'Nenhuma conversa';
+          document.getElementById('clientInfo').textContent =
+            'Selecione uma conversa';
+          document.getElementById('messages').innerHTML = '';
+          document.getElementById('suggestionText').textContent = '';
+          return;
+        }
+
+        document.getElementById('clientAvatar').textContent =
+          chat.initials || 'CL';
+        document.getElementById('clientName').textContent =
+          chat.name || 'Cliente';
+        document.getElementById('clientInfo').textContent =
+          chat.info || `${chat.category} • ${chat.status}`;
+
+        document.getElementById('messages').innerHTML = `
+          <div class="system-note">Conversa classificada como ${
+            chat.category || 'Conversa'
+          }</div>
+          ${(chat.messages || [])
+            .map(
+              (message) =>
+                `<div class="bubble ${
+                  message[0] === 'client' ? 'client-bubble' : 'agent-bubble'
+                }">
+                  ${message[1]}<small>${message[2]}</small>
+                </div>`
+            )
+            .join('')}
+        `;
+
+        document.getElementById('suggestionText').textContent =
+          chat.suggestion || '';
+        document.getElementById('trackCategory').textContent =
+          chat.category || '-';
+        document.getElementById('trackStatus').textContent = chat.status || '-';
+        document.getElementById('trackOwner').textContent = chat.owner || '-';
+        document.getElementById('trackAction').textContent = chat.action || '-';
+        document.getElementById('trackDue').textContent = chat.due || '-';
+        document.getElementById('trackValue').textContent = chat.value || '-';
+        document.getElementById('trackRisk').textContent = chat.risk || '-';
+        document.getElementById('smartSummary').textContent =
+          chat.summary || '';
+
+        document.getElementById('journey').innerHTML = (chat.journey || [])
+          .map(
+            (step, index) =>
+              `<span class="step ${
+                index < (chat.journey || []).length - 1 ? 'done' : ''
+              }">${step}</span>`
+          )
+          .join('');
+
+        const messages = document.getElementById('messages');
+        messages.scrollTop = messages.scrollHeight;
+      }
+
+      function getModuleData(view) {
+        const rowsFromChats = (category) =>
+          chats
+            .filter((chat) => chat.category === category && !isResolved(chat))
+            .map((chat) => [
+              chat.name,
+              chat.value || '-',
+              chat.status,
+              chat.action,
+              chat.due,
+              chat.owner,
+              [
+                chat.priorityClass === 'red' ? 'Atenção' : 'Aberto',
+                chat.priorityClass,
+              ],
+            ]);
+
+        if (view === 'orcamentos') {
+          return {
+            title: 'Orçamentos',
+            subtitle: 'Pedidos, propostas em aberto e follow-ups.',
+            kpis: [
+              [
+                String(getMenuCounts().orcamentos),
+                'orçamentos abertos',
+                'aguardando ação',
+              ],
+              ['R$ 18.450', 'valor potencial', 'em acompanhamento'],
+              ['5', 'sem follow-up', 'atenção'],
+              ['3', 'fechados hoje', 'registrados'],
+            ],
+            tableTitle: 'Mapa de orçamentos',
+            headers: [
+              'Cliente',
+              'Valor',
+              'Status',
+              'Próxima ação',
+              'Prazo',
+              'Responsável',
+              'Prioridade',
+            ],
+            rows: rowsFromChats('Orçamento'),
+          };
+        }
+
+        if (view === 'cobrancas') {
+          return {
+            title: 'Cobranças',
+            subtitle: 'Promessas de pagamento e cobranças pendentes.',
+            kpis: [
+              [
+                String(getMenuCounts().cobrancas),
+                'cobranças abertas',
+                'aguardando',
+              ],
+              ['R$ 7.820', 'pendente', 'em acompanhamento'],
+              ['5', 'promessas hoje', 'acompanhar'],
+              ['3', 'atrasadas', 'prioridade'],
+            ],
+            tableTitle: 'Cobranças do dia',
+            headers: [
+              'Cliente',
+              'Valor',
+              'Status',
+              'Próxima ação',
+              'Prazo',
+              'Responsável',
+              'Prioridade',
+            ],
+            rows: rowsFromChats('Cobrança'),
+          };
+        }
+
+        if (view === 'documentos') {
+          return {
+            title: 'Documentos',
+            subtitle:
+              'Documentos recebidos, pendentes ou aguardando conferência.',
+            kpis: [
+              [
+                String(getMenuCounts().documentos),
+                'documentos em aberto',
+                'acompanhar',
+              ],
+              ['7', 'recebidos', 'conferência'],
+              ['4', 'pendentes', 'cobrar'],
+              ['1', 'inválido', 'corrigir'],
+            ],
+            tableTitle: 'Controle de documentos',
+            headers: [
+              'Cliente',
+              'Valor',
+              'Status',
+              'Próxima ação',
+              'Prazo',
+              'Responsável',
+              'Prioridade',
+            ],
+            rows: rowsFromChats('Documento'),
+          };
+        }
+
+        if (view === 'agendamentos') {
+          return {
+            title: 'Agendamentos',
+            subtitle: 'Confirmações, visitas, horários e reagendamentos.',
+            kpis: [
+              [
+                String(getMenuCounts().agendamentos),
+                'agendamentos abertos',
+                'confirmar',
+              ],
+              ['9', 'para hoje', 'agenda'],
+              ['4', 'sem confirmação', 'atenção'],
+              ['2', 'reagendamentos', 'pendentes'],
+            ],
+            tableTitle: 'Agenda de conversas',
+            headers: [
+              'Cliente',
+              'Valor',
+              'Status',
+              'Próxima ação',
+              'Prazo',
+              'Responsável',
+              'Prioridade',
+            ],
+            rows: rowsFromChats('Agendamento'),
+          };
+        }
+
+        if (view === 'fechamentos') {
+          return {
+            title: 'Conversas que viraram resultado',
+            subtitle:
+              'Orçamentos, pedidos, contratos, pagamentos e agendamentos que nasceram nas conversas.',
+            kpis: [
+              [
+                String(fechamentos.length),
+                'fechamentos registrados',
+                'no backend',
+              ],
+              ['R$ 22.370', 'fechados este mês', 'acompanhados'],
+              ['23', 'pedidos confirmados', 'registrados'],
+              ['R$ 4.820', 'pagamentos recebidos', 'acompanhados'],
+            ],
+            tableTitle: 'Fechamentos registrados',
+            headers: [
+              'Cliente',
+              'Tipo',
+              'Valor',
+              'Responsável',
+              'Data',
+              'Próxima ação',
+              'Status',
+            ],
+            rows: fechamentos.map((f) => [
+              f.cliente,
+              f.tipo,
+              f.valor,
+              f.responsavel,
+              f.data,
+              f.proximaAcao,
+              [f.status, 'green'],
+            ]),
+          };
+        }
+
+        return moduleBase[view];
+      }
+
+      function renderModal(view) {
+        const data = getModuleData(view);
+        if (!data) return;
+
+        document.getElementById('modalTitle').textContent = data.title;
+        document.getElementById('modalSubtitle').textContent = data.subtitle;
+
+        const kpis = data.kpis
+          .map(
+            (kpi) =>
+              `<div class="card kpi"><small>${kpi[1]}</small><h3>${kpi[0]}</h3><p>${kpi[2]}</p></div>`
+          )
+          .join('');
+
+        const rows =
+          data.rows && data.rows.length
+            ? data.rows
+                .map(
+                  (row) =>
+                    `<tr>${row
+                      .map((cell) => `<td>${badge(cell)}</td>`)
+                      .join('')}</tr>`
+                )
+                .join('')
+            : `<tr><td colspan="${data.headers.length}">Nenhum item encontrado neste módulo.</td></tr>`;
+
+        const headers = data.headers
+          .map((header) => `<th>${header}</th>`)
+          .join('');
+
+        document.getElementById('modalBody').innerHTML = `
+          <div class="grid kpis">${kpis}</div>
+          <div class="card" style="margin-bottom:12px">
+            <strong style="color:var(--navy)">${data.tableTitle}</strong>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>${headers}</tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        `;
+
+        document.getElementById('modal').classList.add('active');
+      }
+
+      function closeModal() {
+        document.getElementById('modal').classList.remove('active');
+        renderMenu();
+      }
+
+      async function sendCurrentMessage() {
+        const input = document.getElementById('replyInput');
+        const text = input.value.trim();
+        const chat = chats[state.currentChat];
+
+        if (!text || !chat) return;
+
+        input.value = '';
+
+        try {
+          const data = await apiPost('/api/send-message', {
+            conversationId: chat.id,
+            message: text,
+          });
+
+          const index = chats.findIndex((item) => item.id === data.conversa.id);
+          if (index >= 0) chats[index] = data.conversa;
+
+          renderMenu();
+          renderChatList();
+          renderConversation();
+        } catch (error) {
+          alert('Não foi possível enviar a mensagem: ' + error.message);
+          input.value = text;
+        }
+      }
+
+      async function updateCurrentConversation(updates) {
+        const chat = chats[state.currentChat];
+        if (!chat) return;
+
+        try {
+          const data = await apiPost(
+            `/api/conversations/${chat.id}/update`,
+            updates
+          );
+          const index = chats.findIndex((item) => item.id === data.conversa.id);
+          if (index >= 0) chats[index] = data.conversa;
+
+          renderMenu();
+          renderChatList();
+          renderConversation();
+        } catch (error) {
+          alert('Não foi possível atualizar a conversa: ' + error.message);
+        }
+      }
+
+      async function resolveCurrentConversation() {
+        await updateCurrentConversation({
+          status: 'Resolvido',
+          action: 'Nenhuma ação pendente',
+          due: '-',
+          risk: 'Conversa concluída',
+          priorityClass: 'gray',
+        });
+      }
+
+      async function scheduleCurrentReturn() {
+        await updateCurrentConversation({
+          status: 'Retorno agendado',
+          action: 'Retornar ao cliente',
+          due: 'Amanhã às 10h',
+          risk: 'Aguardando retorno programado',
+          priorityClass: 'yellow',
+        });
+      }
+
+      async function closeCurrentDeal() {
+        const chat = chats[state.currentChat];
+        if (!chat) return;
+
+        try {
+          const data = await apiPost(`/api/conversations/${chat.id}/close`, {});
+          const index = chats.findIndex((item) => item.id === data.conversa.id);
+          if (index >= 0) chats[index] = data.conversa;
+          fechamentos = data.fechamentos || fechamentos;
+
+          renderMenu();
+          renderChatList();
+          renderConversation();
+          renderModal('fechamentos');
+        } catch (error) {
+          alert('Não foi possível registrar o fechamento: ' + error.message);
+        }
+      }
+
+      async function setFastTrack(
+        category,
+        status,
+        action,
+        due,
+        priorityClass
+      ) {
+        await updateCurrentConversation({
+          category,
+          status,
+          action,
+          due,
+          risk: 'Acompanhamento criado pelo ZapLens',
+          priorityClass,
+          info: `${category} • ${status}`,
+        });
+      }
+
+      async function createNewConversation() {
+        const examples = [
+          {
+            name: 'Novo Cliente',
+            message: 'Oi, quanto fica para fazer esse serviço?',
+          },
+          {
+            name: 'Cliente Pagamento',
+            message: 'Vou fazer o PIX hoje e mando comprovante.',
+          },
+          {
+            name: 'Cliente Documento',
+            message: 'Segue o documento que você pediu.',
+          },
+          { name: 'Cliente Agenda', message: 'Tem horário para amanhã?' },
+        ];
+
+        const example = examples[Math.floor(Math.random() * examples.length)];
+
+        try {
+          const data = await apiPost('/api/simulate-message', {
+            name: `${example.name} ${chats.length + 1}`,
+            message: example.message,
+          });
+
+          chats.unshift(data.conversa);
+          state.currentChat = 0;
+          state.currentView = 'today';
+          state.currentFilter = 'Todos';
+          setActiveChip('Todos');
+
+          document.getElementById('inboxTitle').textContent = 'Hoje no ZapLens';
+          document.getElementById('inboxSubtitle').textContent =
+            'Pendências que ainda precisam de ação.';
+
+          renderMenu();
+          renderChatList();
+          renderConversation();
+        } catch (error) {
+          alert('Não foi possível registrar nova conversa: ' + error.message);
+        }
+      }
+
+      async function resetData() {
+        if (!confirm('Deseja limpar os dados da operação e reiniciar a base?'))
+          return;
+
+        try {
+          await apiPost('/api/reset', {});
+          state.currentView = 'today';
+          state.currentFilter = 'Todos';
+          state.currentChat = 0;
+          setActiveChip('Todos');
+          await carregarDadosDoBackend();
+        } catch (error) {
+          alert('Não foi possível limpar os dados: ' + error.message);
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        fallbackData();
+        renderMenu();
+        renderChatList();
+        renderConversation();
+
+        const companyBox = document.getElementById('companyNameBox');
+        if (companyBox) companyBox.textContent = companyName;
+
+        document
+          .getElementById('loginBtn')
+          ?.addEventListener('click', () => switchScreen('setupScreen'));
+        document
+          .getElementById('demoBtn')
+          ?.addEventListener('click', abrirPainel);
+        document
+          .getElementById('setupBtn')
+          ?.addEventListener('click', abrirPainel);
+
+        document
+          .getElementById('logoutBtn')
+          ?.addEventListener('click', () => switchScreen('loginScreen'));
+        document
+          .getElementById('resetBtn')
+          ?.addEventListener('click', resetData);
+        document
+          .getElementById('simulateMessageBtn')
+          ?.addEventListener('click', createNewConversation);
+
+        document
+          .getElementById('sendBtn')
+          ?.addEventListener('click', sendCurrentMessage);
+
+        document
+          .getElementById('replyInput')
+          ?.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+              event.preventDefault();
+              sendCurrentMessage();
+            }
+          });
+
+        document
+          .getElementById('scheduleBtn')
+          ?.addEventListener('click', scheduleCurrentReturn);
+        document
+          .getElementById('closeDealBtn')
+          ?.addEventListener('click', closeCurrentDeal);
+        document
+          .getElementById('quickResolveBtn')
+          ?.addEventListener('click', resolveCurrentConversation);
+        document
+          .getElementById('quickReturnBtn')
+          ?.addEventListener('click', scheduleCurrentReturn);
+        document
+          .getElementById('quickCloseBtn')
+          ?.addEventListener('click', closeCurrentDeal);
+
+        document
+          .getElementById('quickChargeBtn')
+          ?.addEventListener('click', () => {
+            setFastTrack(
+              'Cobrança',
+              'Aguardando pagamento',
+              'Cobrar cliente',
+              'Hoje às 18h',
+              'yellow'
+            );
+          });
+
+        document
+          .getElementById('quickDocBtn')
+          ?.addEventListener('click', () => {
+            setFastTrack(
+              'Documento',
+              'Documento pendente',
+              'Solicitar documento',
+              'Amanhã',
+              'blue'
+            );
+          });
+
+        document
+          .getElementById('quickTransferBtn')
+          ?.addEventListener('click', () => {
+            const chat = chats[state.currentChat];
+            if (!chat) return;
+
+            updateCurrentConversation({
+              owner: chat.owner === 'Ana' ? 'Carlos' : 'Ana',
+              status: 'Transferido',
+              action: 'Novo responsável deve assumir',
+              risk: 'Aguardando novo responsável',
+            });
+          });
+
+        document
+          .getElementById('useSuggestionBtn')
+          ?.addEventListener('click', () => {
+            const input = document.getElementById('replyInput');
+            input.value = document.getElementById('suggestionText').textContent;
+            input.focus();
+          });
+
+        document.querySelectorAll('.chip').forEach((chip) => {
+          chip.addEventListener('click', () => {
+            document
+              .querySelectorAll('.chip')
+              .forEach((item) => item.classList.remove('active'));
+            chip.classList.add('active');
+            state.currentFilter = chip.dataset.filter;
+            renderChatList();
+          });
+        });
+
+        document
+          .getElementById('searchInput')
+          ?.addEventListener('input', renderChatList);
+        document
+          .getElementById('closeModalBtn')
+          ?.addEventListener('click', closeModal);
+        document.getElementById('modal')?.addEventListener('click', (event) => {
+          if (event.target.id === 'modal') closeModal();
+        });
+
+        carregarDadosDoBackend();
+        setInterval(carregarDadosDoBackend, 8000);
+      });
+    </script>
+  </body>
+</html>
