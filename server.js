@@ -11,8 +11,16 @@ const app = express();
 
 const PORT = process.env.PORT || 8080;
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN || 'zaplens_2026';
+
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN || '';
 const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || '';
+
+const META_APP_ID = process.env.META_APP_ID || '';
+const META_APP_SECRET = process.env.META_APP_SECRET || '';
+const META_CONFIGURATION_ID = process.env.META_CONFIGURATION_ID || '';
+
+const PUBLIC_APP_URL =
+  process.env.PUBLIC_APP_URL || 'https://zaplens-mvp-production.up.railway.app';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,10 +35,13 @@ function criarDbInicial() {
     empresas: [
       {
         id: 'empresa_demo',
-        nome: 'Empresa Modelo',
+        nome: 'Operação Principal',
         telefone: 'whatsapp_demo',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       },
     ],
+    whatsappConnections: [],
     conversas: [
       {
         id: '1',
@@ -69,7 +80,28 @@ function criarDbInicial() {
       },
     ],
     fechamentos: [],
+    metaEvents: [],
   };
+}
+
+function aplicarMigracoes(dbAtual) {
+  if (!dbAtual.empresas) dbAtual.empresas = [];
+  if (!dbAtual.whatsappConnections) dbAtual.whatsappConnections = [];
+  if (!dbAtual.conversas) dbAtual.conversas = [];
+  if (!dbAtual.fechamentos) dbAtual.fechamentos = [];
+  if (!dbAtual.metaEvents) dbAtual.metaEvents = [];
+
+  if (!dbAtual.empresas.length) {
+    dbAtual.empresas.push({
+      id: 'empresa_demo',
+      nome: 'Operação Principal',
+      telefone: 'whatsapp_demo',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  return dbAtual;
 }
 
 function carregarDb() {
@@ -81,7 +113,10 @@ function carregarDb() {
 
   try {
     const conteudo = fs.readFileSync(DB_PATH, 'utf-8');
-    return JSON.parse(conteudo);
+    const dbLido = JSON.parse(conteudo);
+    const dbMigrado = aplicarMigracoes(dbLido);
+    fs.writeFileSync(DB_PATH, JSON.stringify(dbMigrado, null, 2), 'utf-8');
+    return dbMigrado;
   } catch (error) {
     console.error('Erro ao ler db.json. Criando novo banco:', error);
     const dbInicial = criarDbInicial();
@@ -104,8 +139,9 @@ function horaCurta() {
   return 'agora';
 }
 
-function gerarId() {
-  return String(Date.now()) + '-' + Math.random().toString(16).slice(2);
+function gerarId(prefixo = '') {
+  const id = String(Date.now()) + '-' + Math.random().toString(16).slice(2);
+  return prefixo ? `${prefixo}_${id}` : id;
 }
 
 function gerarIniciais(nome = 'Cliente') {
@@ -121,6 +157,18 @@ function gerarIniciais(nome = 'Cliente') {
 function garantirEtapa(conversa, etapa) {
   if (!conversa.journey) conversa.journey = [];
   if (!conversa.journey.includes(etapa)) conversa.journey.push(etapa);
+}
+
+function registrarMetaEvent(tipo, payload = {}) {
+  db.metaEvents.unshift({
+    id: gerarId('meta_event'),
+    tipo,
+    payload,
+    createdAt: agoraIso(),
+  });
+
+  db.metaEvents = db.metaEvents.slice(0, 100);
+  salvarDb();
 }
 
 function classificarMensagem(texto = '') {
@@ -275,7 +323,7 @@ function criarOuAtualizarConversa({
 
   if (!conversa) {
     conversa = {
-      id: gerarId(),
+      id: gerarId('conversa'),
       empresaId,
       name: nome || `Cliente ${telefone}`,
       initials: gerarIniciais(nome || 'Cliente'),
@@ -327,9 +375,7 @@ function criarOuAtualizarConversa({
 
 async function enviarMensagemWhatsApp({ telefone, mensagem }) {
   if (!WHATSAPP_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
-    console.log(
-      'WhatsApp real ainda não configurado. Mensagem salva localmente.'
-    );
+    console.log('WhatsApp real ainda não configurado. Mensagem salva localmente.');
     return {
       simulated: true,
       message: 'WhatsApp token/phone_number_id ausente. Envio real ignorado.',
@@ -376,6 +422,7 @@ app.get('/health', (req, res) => {
     app: 'ZapLens MVP',
     port: PORT,
     db: fs.existsSync(DB_PATH),
+    publicAppUrl: PUBLIC_APP_URL,
   });
 });
 
@@ -388,7 +435,9 @@ app.get('/api/conversations', (req, res) => {
     success: true,
     empresaId,
     conversas,
-    fechamentos: db.fechamentos,
+    fechamentos: db.fechamentos.filter(
+      (item) => !item.empresaId || item.empresaId === empresaId
+    ),
   });
 });
 
@@ -508,10 +557,8 @@ app.post('/api/conversations/:id/close', (req, res) => {
     });
   }
 
-  const idFechamento = `${conversa.id}-${Date.now()}`;
-
   const fechamento = {
-    id: idFechamento,
+    id: gerarId('fechamento'),
     empresaId: conversa.empresaId,
     cliente: conversa.name,
     tipo: 'Fechamento via conversa',
@@ -520,6 +567,7 @@ app.post('/api/conversations/:id/close', (req, res) => {
     data: new Date().toLocaleDateString('pt-BR'),
     proximaAcao: 'Acompanhar pós-fechamento',
     status: 'Registrado',
+    createdAt: agoraIso(),
   };
 
   db.fechamentos.unshift(fechamento);
@@ -555,6 +603,185 @@ app.post('/api/reset', (req, res) => {
   });
 });
 
+app.get('/api/whatsapp/status', (req, res) => {
+  const empresaId = req.query.empresaId || 'empresa_demo';
+
+  const connection = db.whatsappConnections.find(
+    (item) => item.empresaId === empresaId && item.status !== 'revoked'
+  );
+
+  res.json({
+    success: true,
+    empresaId,
+    connected: Boolean(connection),
+    connection: connection || null,
+    meta: {
+      hasAppId: Boolean(META_APP_ID),
+      hasAppSecret: Boolean(META_APP_SECRET),
+      hasConfigurationId: Boolean(META_CONFIGURATION_ID),
+      hasWhatsappToken: Boolean(WHATSAPP_TOKEN),
+      hasPhoneNumberId: Boolean(WHATSAPP_PHONE_NUMBER_ID),
+      callbackUrl: `${PUBLIC_APP_URL}/api/whatsapp/oauth/callback`,
+      webhookUrl: `${PUBLIC_APP_URL}/webhook`,
+      verifyToken: VERIFY_TOKEN,
+    },
+  });
+});
+
+app.get('/api/whatsapp/connect-info', (req, res) => {
+  res.json({
+    success: true,
+    appId: META_APP_ID,
+    configurationId: META_CONFIGURATION_ID,
+    redirectUri: `${PUBLIC_APP_URL}/api/whatsapp/oauth/callback`,
+    webhookUrl: `${PUBLIC_APP_URL}/webhook`,
+    verifyToken: VERIFY_TOKEN,
+    readyForEmbeddedSignup: Boolean(META_APP_ID && META_CONFIGURATION_ID),
+  });
+});
+
+app.get('/api/whatsapp/oauth/callback', async (req, res) => {
+  const { code, state, error, error_description } = req.query;
+
+  registrarMetaEvent('oauth_callback', {
+    query: req.query,
+    receivedAt: agoraIso(),
+  });
+
+  if (error) {
+    return res.status(400).send(`
+      <!doctype html>
+      <html lang="pt-BR">
+        <head>
+          <meta charset="utf-8" />
+          <title>ZapLens | Conexão não concluída</title>
+          <style>
+            body { font-family: Arial, sans-serif; background:#f8fafc; color:#0f172a; padding:40px; }
+            .card { max-width:620px; margin:60px auto; background:white; border:1px solid #e2e8f0; border-radius:18px; padding:28px; box-shadow:0 18px 50px rgba(15,23,42,.08); }
+            h1 { margin:0 0 12px; }
+            p { color:#475569; line-height:1.6; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <h1>Conexão não concluída</h1>
+            <p>A Meta retornou um erro durante a conexão.</p>
+            <p><strong>Erro:</strong> ${error}</p>
+            <p>${error_description || ''}</p>
+          </div>
+        </body>
+      </html>
+    `);
+  }
+
+  const empresaId = state || 'empresa_demo';
+
+  const connection = {
+    id: gerarId('wa_connection'),
+    empresaId,
+    provider: 'meta_embedded_signup',
+    status: code ? 'oauth_code_received' : 'callback_without_code',
+    code: code || null,
+    rawQuery: req.query,
+    createdAt: agoraIso(),
+    updatedAt: agoraIso(),
+    notes:
+      'Código OAuth recebido. Próxima etapa: trocar o code por token e vincular WABA/phone_number_id.',
+  };
+
+  db.whatsappConnections.unshift(connection);
+  salvarDb();
+
+  return res.send(`
+    <!doctype html>
+    <html lang="pt-BR">
+      <head>
+        <meta charset="utf-8" />
+        <title>ZapLens | WhatsApp conectado</title>
+        <style>
+          body { font-family: Arial, sans-serif; background:#f8fafc; color:#0f172a; padding:40px; }
+          .card { max-width:620px; margin:60px auto; background:white; border:1px solid #e2e8f0; border-radius:18px; padding:28px; box-shadow:0 18px 50px rgba(15,23,42,.08); }
+          h1 { margin:0 0 12px; color:#0f766e; }
+          p { color:#475569; line-height:1.6; }
+          code { background:#f1f5f9; padding:3px 6px; border-radius:6px; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h1>WhatsApp recebido pelo ZapLens</h1>
+          <p>O retorno da Meta chegou corretamente no backend.</p>
+          <p>Status salvo: <code>${connection.status}</code></p>
+          <p>Empresa: <code>${empresaId}</code></p>
+          <p>Agora podemos avançar para trocar o código por token e finalizar a conexão do WhatsApp.</p>
+        </div>
+      </body>
+    </html>
+  `);
+});
+
+app.post('/api/meta/deauthorize', (req, res) => {
+  registrarMetaEvent('deauthorize', {
+    body: req.body,
+    receivedAt: agoraIso(),
+  });
+
+  const signedRequest = req.body?.signed_request || null;
+
+  if (signedRequest) {
+    db.whatsappConnections = db.whatsappConnections.map((connection) => ({
+      ...connection,
+      status: 'revoked',
+      updatedAt: agoraIso(),
+    }));
+    salvarDb();
+  }
+
+  res.json({
+    success: true,
+    message: 'Solicitação de desautorização recebida.',
+  });
+});
+
+app.get('/api/meta/deauthorize', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Endpoint de desautorização ativo.',
+  });
+});
+
+app.post('/api/meta/data-deletion', (req, res) => {
+  const confirmationCode = gerarId('delete');
+
+  registrarMetaEvent('data_deletion', {
+    body: req.body,
+    confirmationCode,
+    receivedAt: agoraIso(),
+  });
+
+  res.json({
+    url: `${PUBLIC_APP_URL}/api/meta/data-deletion/status/${confirmationCode}`,
+    confirmation_code: confirmationCode,
+  });
+});
+
+app.get('/api/meta/data-deletion', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Endpoint de solicitação de exclusão de dados ativo.',
+    instructions:
+      'Solicitações oficiais devem ser enviadas via POST pela Meta. Este GET confirma que a rota existe.',
+  });
+});
+
+app.get('/api/meta/data-deletion/status/:confirmationCode', (req, res) => {
+  res.json({
+    success: true,
+    status: 'received',
+    confirmation_code: req.params.confirmationCode,
+    message: 'Solicitação de exclusão recebida pelo ZapLens.',
+  });
+});
+
 app.get('/webhook', (req, res) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
@@ -570,6 +797,11 @@ app.get('/webhook', (req, res) => {
 
 app.post('/webhook', (req, res) => {
   console.log('Webhook recebido:', JSON.stringify(req.body, null, 2));
+
+  registrarMetaEvent('webhook', {
+    body: req.body,
+    receivedAt: agoraIso(),
+  });
 
   try {
     const entry = req.body.entry?.[0];
@@ -602,4 +834,6 @@ app.listen(PORT, () => {
   console.log(`Servidor ZapLens rodando na porta ${PORT}`);
   console.log(`Painel: http://localhost:${PORT}`);
   console.log(`API: http://localhost:${PORT}/api/conversations`);
+  console.log(`Webhook: ${PUBLIC_APP_URL}/webhook`);
+  console.log(`OAuth callback: ${PUBLIC_APP_URL}/api/whatsapp/oauth/callback`);
 });
