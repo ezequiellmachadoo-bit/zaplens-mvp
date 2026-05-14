@@ -23,6 +23,7 @@ const META_GRAPH_VERSION = process.env.META_GRAPH_VERSION || 'v20.0';
 const PUBLIC_APP_URL =
   process.env.PUBLIC_APP_URL || 'https://zaplens-mvp-production.up.railway.app';
 
+const OAUTH_REDIRECT_URI = `${PUBLIC_APP_URL}/api/whatsapp/oauth/callback`;
 const GRAPH_BASE_URL = `https://graph.facebook.com/${META_GRAPH_VERSION}`;
 
 const __filename = fileURLToPath(import.meta.url);
@@ -160,6 +161,7 @@ function aplicarMigracoes(dbAtual) {
       status: connection.status || 'oauth_code_received',
       phone: connection.phone || null,
       code: connection.code || null,
+      codeUsed: Boolean(connection.codeUsed),
       businessToken: connection.businessToken || null,
       businessTokenMasked:
         connection.businessTokenMasked || mascararToken(connection.businessToken),
@@ -351,6 +353,7 @@ async function trocarCodePorBusinessToken(code) {
     client_id: META_APP_ID,
     client_secret: META_APP_SECRET,
     code,
+    redirect_uri: OAUTH_REDIRECT_URI,
   });
 }
 
@@ -444,12 +447,33 @@ async function completarConexaoMeta(connection) {
   connection.onboarding = {
     ...(connection.onboarding || {}),
     etapa2StartedAt: agoraIso(),
+    redirectUriUsed: OAUTH_REDIRECT_URI,
   };
 
   if (!connection.code) {
     connection.status = 'callback_without_code';
     connection.notes =
       'A Meta retornou para o ZapLens, mas não enviou code. Refaça a conexão.';
+    connection.updatedAt = agoraIso();
+    salvarDb();
+    return connection;
+  }
+
+  if (connection.businessToken && connection.wabaId && connection.phoneNumberId) {
+    connection.status = connection.subscribedToWebhook
+      ? 'connected_ready'
+      : 'connected_without_webhook_subscription';
+    connection.notes =
+      'A conexão já possui token e ativos. Não tentamos reutilizar o mesmo code.';
+    connection.updatedAt = agoraIso();
+    salvarDb();
+    return connection;
+  }
+
+  if (connection.codeUsed && !connection.businessToken) {
+    connection.status = 'token_exchange_failed';
+    connection.notes =
+      'Este código OAuth já foi usado ou expirou. Desconecte e conecte novamente para gerar um code novo.';
     connection.updatedAt = agoraIso();
     salvarDb();
     return connection;
@@ -462,6 +486,7 @@ async function completarConexaoMeta(connection) {
 
     const tokenPayload = await trocarCodePorBusinessToken(connection.code);
 
+    connection.codeUsed = true;
     connection.businessToken = tokenPayload.access_token || null;
     connection.businessTokenMasked = mascararToken(connection.businessToken);
     connection.tokenType = tokenPayload.token_type || null;
@@ -480,10 +505,11 @@ async function completarConexaoMeta(connection) {
     connection.updatedAt = agoraIso();
     salvarDb();
   } catch (error) {
+    connection.codeUsed = true;
     registrarErroConexao(connection, 'exchange_code_for_token', error);
     connection.status = 'token_exchange_failed';
     connection.notes =
-      'Não conseguimos trocar o code por token. Verifique App ID, App Secret e permissões.';
+      'Não conseguimos trocar o code por token. Verifique App ID, App Secret, redirect_uri e permissões. Depois desconecte e conecte novamente para gerar um code novo.';
     salvarDb();
     return connection;
   }
@@ -498,6 +524,7 @@ async function completarConexaoMeta(connection) {
     if (queryPhoneNumberId) connection.phoneNumberId = String(queryPhoneNumberId);
 
     const debugPayload = await debugToken(connection.businessToken);
+
     connection.onboarding.debugToken = {
       app_id: debugPayload?.data?.app_id || null,
       type: debugPayload?.data?.type || null,
@@ -853,6 +880,7 @@ function salvarConexaoWhatsapp({
       status: status || 'oauth_code_received',
       phone: telefone,
       code: code || null,
+      codeUsed: false,
       businessToken: null,
       businessTokenMasked: null,
       tokenType: null,
@@ -877,6 +905,7 @@ function salvarConexaoWhatsapp({
     connection.status = status || connection.status || 'oauth_code_received';
     connection.phone = telefone || connection.phone || null;
     connection.code = code || connection.code || null;
+    connection.codeUsed = false;
     connection.rawQuery = rawQuery || connection.rawQuery || {};
     connection.provider = provider;
     connection.updatedAt = agoraIso();
@@ -1068,10 +1097,12 @@ function montarConexaoSegura(connection) {
     updatedAt: connection.updatedAt,
     notes: connection.notes,
     hasCode: Boolean(connection.code),
+    codeUsed: Boolean(connection.codeUsed),
     hasBusinessToken: Boolean(connection.businessToken),
     businessTokenMasked: connection.businessTokenMasked || mascararToken(connection.businessToken),
     errors: connection.errors || [],
     onboarding: {
+      redirectUriUsed: connection.onboarding?.redirectUriUsed || null,
       tokenPayload: connection.onboarding?.tokenPayload || null,
       debugToken: connection.onboarding?.debugToken || null,
       phoneNumbersFound: connection.onboarding?.phoneNumbersFound || [],
@@ -1094,6 +1125,7 @@ app.get('/health', (req, res) => {
     db: fs.existsSync(DB_PATH),
     publicAppUrl: PUBLIC_APP_URL,
     graphVersion: META_GRAPH_VERSION,
+    oauthRedirectUri: OAUTH_REDIRECT_URI,
   });
 });
 
@@ -1295,7 +1327,7 @@ app.get('/api/whatsapp/status', (req, res) => {
       hasConfigurationId: Boolean(META_CONFIGURATION_ID),
       hasWhatsappToken: Boolean(WHATSAPP_TOKEN),
       hasPhoneNumberId: Boolean(WHATSAPP_PHONE_NUMBER_ID),
-      callbackUrl: `${PUBLIC_APP_URL}/api/whatsapp/oauth/callback`,
+      callbackUrl: OAUTH_REDIRECT_URI,
       webhookUrl: `${PUBLIC_APP_URL}/webhook`,
       verifyToken: VERIFY_TOKEN,
     },
@@ -1307,7 +1339,7 @@ app.get('/api/whatsapp/connect-info', (req, res) => {
     success: true,
     appId: META_APP_ID,
     configurationId: META_CONFIGURATION_ID,
-    redirectUri: `${PUBLIC_APP_URL}/api/whatsapp/oauth/callback`,
+    redirectUri: OAUTH_REDIRECT_URI,
     webhookUrl: `${PUBLIC_APP_URL}/webhook`,
     verifyToken: VERIFY_TOKEN,
     readyForEmbeddedSignup: Boolean(META_APP_ID && META_CONFIGURATION_ID),
@@ -1569,5 +1601,5 @@ app.listen(PORT, () => {
   console.log(`Painel: http://localhost:${PORT}`);
   console.log(`API: http://localhost:${PORT}/api/conversations`);
   console.log(`Webhook: ${PUBLIC_APP_URL}/webhook`);
-  console.log(`OAuth callback: ${PUBLIC_APP_URL}/api/whatsapp/oauth/callback`);
+  console.log(`OAuth callback: ${OAUTH_REDIRECT_URI}`);
 });
