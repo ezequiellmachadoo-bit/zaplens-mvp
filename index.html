@@ -1179,94 +1179,7 @@
         }
       }
     
-      .wa-connect-card {
-        margin: 14px 0 0;
-        border: 1px solid rgba(20, 184, 166, 0.25);
-        background: linear-gradient(135deg, rgba(230, 255, 251, 0.9), #ffffff);
-        border-radius: 16px;
-        padding: 14px;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-      }
-      .wa-connect-top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        margin-bottom: 10px;
-      }
-      .wa-status-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        border-radius: 999px;
-        padding: 5px 9px;
-        font-size: 11px;
-        font-weight: 900;
-      }
-      .wa-status-pill.disconnected {
-        background: var(--yellowbg);
-        color: var(--yellow);
-      }
-      .wa-status-pill.connected {
-        background: var(--greenbg);
-        color: var(--green);
-      }
-      .wa-status-dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 999px;
-        background: currentColor;
-      }
-      .wa-connect-actions {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 8px;
-      }
-      .wa-tech-details {
-        margin-top: 10px;
-        display: grid;
-        gap: 6px;
-        font-size: 11px;
-        color: var(--muted);
-        word-break: break-all;
-      }
-      .wa-tech-details code {
-        display: block;
-        background: #f8fafc;
-        border: 1px solid var(--line);
-        padding: 7px;
-        border-radius: 9px;
-        color: #334155;
-      }
-
-    
-      .wa-connect-card {
-        margin: 16px 0;
-        border: 1px solid rgba(20, 184, 166, 0.24);
-        background: linear-gradient(135deg, rgba(230, 255, 251, 0.95), #ffffff);
-        border-radius: 18px;
-        padding: 16px;
-        box-shadow: 0 12px 34px rgba(15, 23, 42, 0.07);
-      }
-      .wa-connect-card.compact { padding: 12px; margin: 12px 0 0; }
-      .wa-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-      .wa-title-row h3 { font-size: 16px; margin: 0 0 4px; letter-spacing: -0.2px; color: var(--navy); }
-      .wa-title-row p { font-size: 12px; color: var(--muted); line-height: 1.45; margin: 0; }
-      .wa-status-pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 6px 10px; font-size: 11px; font-weight: 900; white-space: nowrap; }
-      .wa-status-pill.disconnected { background: var(--yellowbg); color: var(--yellow); }
-      .wa-status-pill.connected { background: var(--greenbg); color: var(--green); }
-      .wa-status-dot { width: 7px; height: 7px; border-radius: 999px; background: currentColor; }
-      .wa-phone-field { margin: 12px 0; }
-      .wa-phone-field label { display: block; font-size: 12px; font-weight: 900; color: var(--ink); margin-bottom: 7px; }
-      .wa-phone-field input { width: 100%; border: 1px solid var(--line); border-radius: 13px; padding: 12px; outline: none; background: #fff; font-size: 14px; }
-      .wa-phone-field input:focus { border-color: var(--teal2); box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.12); }
-      .wa-benefits { display: grid; gap: 7px; margin: 12px 0; color: #334155; font-size: 12px; line-height: 1.35; }
-      .wa-benefits span { display: flex; gap: 7px; align-items: flex-start; }
-      .wa-actions { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 12px; }
-      .wa-helper { margin-top: 9px; font-size: 11px; color: var(--muted); line-height: 1.4; }
-
-    
-      /* ===== ZapLens SaaS real: login demo, onboarding simples e mobile ===== */
+      /* ===== ZapLens SaaS real: vídeo demo, conexão simples e mobile ===== */
       .demo-video-panel {
         position: relative;
         border-radius: 24px;
@@ -1288,11 +1201,7 @@
         margin-bottom: 14px;
       }
 
-      .demo-dots {
-        display: flex;
-        gap: 6px;
-      }
-
+      .demo-dots { display: flex; gap: 6px; }
       .demo-dots span {
         width: 9px;
         height: 9px;
@@ -1452,16 +1361,8 @@
         white-space: nowrap;
       }
 
-      .wa-status-pill.disconnected {
-        background: var(--yellowbg);
-        color: var(--yellow);
-      }
-
-      .wa-status-pill.connected {
-        background: var(--greenbg);
-        color: var(--green);
-      }
-
+      .wa-status-pill.disconnected { background: var(--yellowbg); color: var(--yellow); }
+      .wa-status-pill.connected { background: var(--greenbg); color: var(--green); }
       .wa-status-dot {
         width: 7px;
         height: 7px;
@@ -1469,10 +1370,7 @@
         background: currentColor;
       }
 
-      .wa-phone-field {
-        margin: 12px 0;
-      }
-
+      .wa-phone-field { margin: 12px 0; }
       .wa-phone-field label {
         display: block;
         font-size: 12px;
@@ -1537,9 +1435,7 @@
         padding: 24px;
       }
 
-      .connect-loading.active {
-        display: flex;
-      }
+      .connect-loading.active { display: flex; }
 
       .connect-loading-card {
         width: min(440px, 92vw);
@@ -1560,9 +1456,7 @@
         animation: spin .9s linear infinite;
       }
 
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
+      @keyframes spin { to { transform: rotate(360deg); } }
 
       .connect-loading-card h3 {
         margin: 0 0 8px;
@@ -1576,103 +1470,28 @@
         margin: 0;
       }
 
-      .mobile-nav {
-        display: none;
-      }
+      .mobile-nav { display: none; }
 
       @media (max-width: 900px) {
-        body {
-          overflow: auto;
-        }
-
-        .login {
-          display: block;
-          min-height: 100vh;
-        }
-
-        .login-hero {
-          display: block;
-          padding: 22px;
-          min-height: auto;
-        }
-
-        .hero-copy h1 {
-          font-size: 34px;
-          letter-spacing: -1.3px;
-        }
-
-        .hero-copy p {
-          font-size: 15px;
-        }
-
-        .proof-grid {
-          grid-template-columns: 1fr;
-          margin-top: 20px;
-        }
-
-        .demo-video-panel {
-          margin-top: 22px;
-          min-height: auto;
-        }
-
-        .demo-frame {
-          grid-template-columns: 1fr;
-        }
-
-        .demo-sidebar {
-          grid-template-columns: repeat(2, 1fr);
-        }
-
-        .login-panel {
-          padding: 24px;
-          min-height: auto;
-        }
-
-        .setup-page {
-          padding: 16px;
-        }
-
-        .setup-card {
-          padding: 22px;
-        }
-
-        .onboarding-steps {
-          grid-template-columns: 1fr;
-        }
-
-        .app {
-          display: block;
-          height: 100vh;
-          overflow: hidden;
-        }
-
-        .main-menu,
-        .inbox,
-        .conversation,
-        .sidepanel {
-          display: none;
-          height: calc(100vh - 64px);
-        }
-
-        .main-menu.mobile-active,
-        .inbox.mobile-active,
-        .conversation.mobile-active,
-        .sidepanel.mobile-active {
-          display: flex;
-        }
-
-        .main-menu.mobile-active {
-          width: 100%;
-        }
-
-        .conversation.mobile-active {
-          height: calc(100vh - 64px);
-        }
-
-        .sidepanel.mobile-active {
-          display: flex;
-        }
-
+        body { overflow: auto; }
+        .login { display: block; min-height: 100vh; }
+        .login-hero { display: block; padding: 22px; min-height: auto; }
+        .hero-copy h1 { font-size: 34px; letter-spacing: -1.3px; }
+        .hero-copy p { font-size: 15px; }
+        .proof-grid { grid-template-columns: 1fr; margin-top: 20px; }
+        .demo-video-panel { margin-top: 22px; min-height: auto; }
+        .demo-frame { grid-template-columns: 1fr; }
+        .demo-sidebar { grid-template-columns: repeat(2, 1fr); }
+        .login-panel { padding: 24px; min-height: auto; }
+        .setup-page { padding: 16px; }
+        .setup-card { padding: 22px; }
+        .onboarding-steps { grid-template-columns: 1fr; }
+        .app { display: block; height: 100vh; overflow: hidden; }
+        .main-menu, .inbox, .conversation, .sidepanel { display: none; height: calc(100vh - 64px); }
+        .main-menu.mobile-active, .inbox.mobile-active, .conversation.mobile-active, .sidepanel.mobile-active { display: flex; }
+        .main-menu.mobile-active { width: 100%; }
+        .conversation.mobile-active { height: calc(100vh - 64px); }
+        .sidepanel.mobile-active { display: flex; }
         .mobile-nav {
           position: fixed;
           left: 0;
@@ -1702,13 +1521,8 @@
           background: var(--tealbg);
         }
 
-        .bubble {
-          max-width: 88%;
-        }
-
-        .conv-actions {
-          display: none;
-        }
+        .bubble { max-width: 88%; }
+        .conv-actions { display: none; }
       }
 
     </style>
@@ -1807,14 +1621,6 @@
             >
               Entrar no ZapLens
             </button>
-            <button
-              id="accessPanelBtn"
-              class="btn btn-secondary btn-full"
-              type="button"
-              style="margin-top: 10px"
-            >
-              Acessar painel
-            </button>
             <p class="mini">
               Central operacional para acompanhar conversas, retornos e resultados.
             </p>
@@ -1829,9 +1635,11 @@
           <div class="brand">
             <span class="brand-mark">ZL</span>Zap<span>Lens</span>
           </div>
+
           <h1>Conecte sua operação</h1>
           <p>
-            Informe os dados da empresa e conecte o WhatsApp Business para começar a organizar conversas, prioridades e oportunidades.
+            Informe os dados da empresa e conecte o WhatsApp Business para começar
+            a organizar conversas, prioridades e oportunidades.
           </p>
 
           <div class="onboarding-steps">
@@ -1853,6 +1661,7 @@
             <label>Nome da empresa</label>
             <input id="companyInput" value="Operação Principal" />
           </div>
+
           <div class="field">
             <label>Segmento</label>
             <select id="segmentInput">
@@ -1867,24 +1676,76 @@
               <option>Outro</option>
             </select>
           </div>
+
           <div class="field">
             <label>Tamanho da equipe de atendimento</label>
-            <select>
+            <select id="teamSizeInput">
               <option>1 pessoa</option>
               <option selected>2 a 5 pessoas</option>
               <option>6 a 15 pessoas</option>
               <option>Mais de 15 pessoas</option>
             </select>
           </div>
-<p class="wa-helper">Você será direcionado para a Meta para autorizar a conexão com segurança.</p>
-          </div>
 
-          </div>
-</div>
-
+          <div class="wa-connect-card">
+            <div class="wa-title-row">
+              <div>
+                <h3>Conecte seu WhatsApp Business</h3>
+                <p>O ZapLens vai organizar conversas por prioridade, categoria e próxima ação.</p>
+              </div>
+              <span id="waStatusPillSetup" class="wa-status-pill disconnected">
+                <span class="wa-status-dot"></span>
+                Não conectado
+              </span>
             </div>
 
+            <div class="wa-phone-field">
+              <label>Número do WhatsApp da empresa</label>
+              <input id="businessWhatsAppInput" placeholder="Ex: 48991990531" inputmode="tel" />
+            </div>
 
+            <div class="wa-benefits">
+              <span>✓ Conversas separadas por orçamento, cobrança, documento e agendamento.</span>
+              <span>✓ Sugestões de resposta e acompanhamento para não perder clientes.</span>
+              <span>✓ Fechamentos e pendências em um painel simples e direto.</span>
+            </div>
+
+            <div class="wa-actions">
+              <button id="setupConnectWhatsAppBtn" class="btn btn-primary btn-full" type="button">
+                Conectar WhatsApp agora
+              </button>
+            </div>
+
+            <p class="wa-helper">
+              Você será direcionado para a Meta para autorizar a conexão com segurança.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="appScreen" class="screen">
+      <div class="app">
+        <aside class="main-menu">
+          <div class="menu-top">
+            <div class="menu-brand">
+              <span class="brand-mark">ZL</span>
+              <div>
+                <strong>Zap<span>Lens</span></strong>
+              </div>
+            </div>
+            <p class="menu-caption">
+              Responder, acompanhar, cobrar e fechar sem perder conversas.
+            </p>
+          </div>
+
+          <div class="menu-scroll" id="mainMenu"></div>
+
+          <div class="menu-bottom">
+            <div class="company-box">
+              <strong id="companyNameBox">Operação Principal</strong>
+              <span>WhatsApp pronto para conexão</span>
+            </div>
             <div class="wa-connect-card compact">
               <div class="wa-title-row" style="margin-bottom:8px;">
                 <div>
@@ -2123,7 +1984,6 @@
       </div>
     </section>
 
-
     <nav class="mobile-nav" id="mobileNav">
       <button type="button" class="active" data-mobile-section="inbox">Conversas</button>
       <button type="button" data-mobile-section="conversation">Chat</button>
@@ -2145,7 +2005,6 @@
         <div class="modal-body" id="modalBody"></div>
       </div>
     </div>
-
 
     <div id="connectLoading" class="connect-loading">
       <div class="connect-loading-card">
@@ -2897,9 +2756,6 @@
       }
 
 
-
-
-
       async function carregarStatusWhatsApp() {
         try {
           const statusData = await apiGet("/api/whatsapp/status");
@@ -2983,7 +2839,7 @@
         const appId = whatsappConnectInfo.appId;
         const configurationId = whatsappConnectInfo.configurationId;
         const redirectUri = encodeURIComponent(whatsappConnectInfo.redirectUri);
-        const state = encodeURIComponent(`empresa_demo:${phone}`);
+        const state = encodeURIComponent("empresa_demo");
 
         const extras = encodeURIComponent(
           JSON.stringify({
@@ -3027,7 +2883,12 @@
             clearInterval(checkPopup);
             loading?.classList.remove("active");
             await carregarStatusWhatsApp();
-            abrirPainel();
+
+            if (whatsappStatus?.connected) {
+              abrirPainel();
+            } else {
+              alert("A conexão ainda não foi confirmada. Conclua a autorização da Meta para entrar na central.");
+            }
           }
         }, 1200);
       }
@@ -3043,7 +2904,6 @@
           button.classList.toggle("active", button.dataset.mobileSection === sectionClass);
         });
       }
-
 
       document.addEventListener("DOMContentLoaded", () => {
         fallbackData();
@@ -3070,16 +2930,12 @@
         const companyBox = document.getElementById("companyNameBox");
         if (companyBox) companyBox.textContent = companyName;
 
-        document.getElementById("loginBtn")?.addEventListener("click", () => switchScreen("setupScreen"));
-        document.getElementById("demoBtn")?.addEventListener("click", abrirPainel);
-        document.getElementById("setupBtn")?.addEventListener("click", abrirPainel);
-        document.getElementById("setupSkipBtn")?.addEventListener("click", abrirPainel);
+        document.getElementById("loginBtn")?.addEventListener("click", async () => { switchScreen("setupScreen"); await carregarStatusWhatsApp(); });
         document.getElementById("setupConnectWhatsAppBtn")?.addEventListener("click", conectarWhatsApp);
 
         document.getElementById("logoutBtn")?.addEventListener("click", () => switchScreen("loginScreen"));
         document.getElementById("resetBtn")?.addEventListener("click", resetData);
         document.getElementById("connectWhatsAppBtn")?.addEventListener("click", conectarWhatsApp);
-        document.getElementById("refreshWhatsAppStatusBtn")?.addEventListener("click", carregarStatusWhatsApp);
         document.getElementById("simulateMessageBtn")?.addEventListener("click", createNewConversation);
 
         document.getElementById("sendBtn")?.addEventListener("click", sendCurrentMessage);
@@ -3143,9 +2999,7 @@
         });
 
         carregarDadosDoBackend();
-        carregarStatusWhatsApp();
         setInterval(carregarDadosDoBackend, 8000);
-        setInterval(carregarStatusWhatsApp, 15000);
       });
     </script>
 
