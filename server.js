@@ -459,6 +459,17 @@ async function buscarPhoneNumbers(wabaId, accessToken) {
   return Array.isArray(result?.data) ? result.data : [];
 }
 
+async function buscarDetalhesPhoneNumber(phoneNumberId, accessToken) {
+  if (!phoneNumberId || !accessToken) {
+    throw new Error('phoneNumberId ou token ausente para buscar detalhes do número.');
+  }
+
+  return graphGet(`/${phoneNumberId}`, accessToken, {
+    fields:
+      'id,display_phone_number,verified_name,quality_rating,code_verification_status,name_status,platform_type,throughput',
+  });
+}
+
 function escolherPhoneNumber(phoneNumbers = [], telefoneInformado = '') {
   if (!phoneNumbers.length) return null;
 
@@ -510,7 +521,7 @@ async function listarAssinaturasDoApp() {
   return graphGet(`/${META_APP_ID}/subscriptions`, appAccessToken, {});
 }
 
-async function configurarAssinaturaAppWhatsApp() {
+async function configurarAssinaturaAppWhatsApp(fields = 'messages') {
   const appAccessToken = getAppAccessToken();
 
   if (!appAccessToken || !META_APP_ID) {
@@ -521,9 +532,51 @@ async function configurarAssinaturaAppWhatsApp() {
     object: 'whatsapp_business_account',
     callback_url: WEBHOOK_URL,
     verify_token: VERIFY_TOKEN,
-    fields: 'messages',
+    fields,
     include_values: 'true',
   });
+}
+
+async function enviarMensagemTesteViaApi(connection, to, message) {
+  if (!connection?.businessToken || !connection?.phoneNumberId) {
+    throw new Error('Conexão sem businessToken ou phoneNumberId.');
+  }
+
+  const telefoneDestino = String(to || '').replace(/\D/g, '');
+
+  if (!telefoneDestino) {
+    throw new Error('Informe o parâmetro ?to= com DDI+DDD+número.');
+  }
+
+  const url = `${GRAPH_BASE_URL}/${connection.phoneNumberId}/messages`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${connection.businessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      to: telefoneDestino,
+      type: 'text',
+      text: {
+        body:
+          message ||
+          'Teste ZapLens: esta mensagem foi enviada pela API oficial do WhatsApp.',
+      },
+    }),
+  });
+
+  const json = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const error = new Error(json?.error?.message || 'Erro ao enviar mensagem teste.');
+    error.details = json;
+    throw error;
+  }
+
+  return json;
 }
 
 async function completarConexaoMeta(connection) {
@@ -1203,6 +1256,8 @@ function montarConexaoSegura(connection) {
       debugToken: connection.onboarding?.debugToken || null,
       phoneNumbersFound: connection.onboarding?.phoneNumbersFound || [],
       subscription: connection.onboarding?.subscription || null,
+      subscriptionOverride: connection.onboarding?.subscriptionOverride || null,
+      subscriptionFallback: connection.onboarding?.subscriptionFallback || null,
     },
   };
 }
@@ -1334,11 +1389,19 @@ async function executarWebhookDiagnostics(empresaId = 'empresa_demo') {
   }
 
   try {
-    const appSubscriptionResult = await configurarAssinaturaAppWhatsApp();
+    const appSubscriptionResult = await configurarAssinaturaAppWhatsApp('messages');
 
-    addStep('configure_app_subscription_whatsapp_business_account_messages', true, appSubscriptionResult);
+    addStep(
+      'configure_app_subscription_whatsapp_business_account_messages',
+      true,
+      appSubscriptionResult
+    );
   } catch (error) {
-    addStep('configure_app_subscription_whatsapp_business_account_messages', false, erroParaJson(error));
+    addStep(
+      'configure_app_subscription_whatsapp_business_account_messages',
+      false,
+      erroParaJson(error)
+    );
   }
 
   try {
@@ -1367,6 +1430,316 @@ async function executarWebhookDiagnostics(empresaId = 'empresa_demo') {
       name: step.name,
       data: step.data,
     })),
+  });
+
+  return resultado;
+}
+
+async function executarPlatformDiagnostics(empresaId = 'empresa_demo') {
+  const connection = buscarConexaoAtiva(empresaId);
+
+  const resultado = {
+    success: true,
+    mode: 'read_only',
+    checkedAt: agoraIso(),
+    empresaId,
+    publicAppUrl: PUBLIC_APP_URL,
+    webhookUrl: WEBHOOK_URL,
+    verifyToken: VERIFY_TOKEN,
+    appId: META_APP_ID || null,
+    graphVersion: META_GRAPH_VERSION,
+    connection: montarConexaoSegura(connection),
+    steps: [],
+    conclusion: '',
+  };
+
+  function addStep(name, ok, data) {
+    resultado.steps.push({
+      name,
+      ok,
+      data,
+      at: agoraIso(),
+    });
+  }
+
+  if (!connection) {
+    resultado.success = false;
+    resultado.conclusion = 'Nenhuma conexão ativa encontrada.';
+    addStep('connection_check', false, {
+      message: 'Nenhuma conexão ativa encontrada.',
+    });
+    return resultado;
+  }
+
+  if (!connection.businessToken) {
+    resultado.success = false;
+    resultado.conclusion = 'Conexão sem businessToken.';
+    addStep('business_token_check', false, {
+      message: 'businessToken ausente.',
+    });
+    return resultado;
+  }
+
+  addStep('connection_check', true, montarConexaoSegura(connection));
+
+  try {
+    const phoneDetails = await buscarDetalhesPhoneNumber(
+      connection.phoneNumberId,
+      connection.businessToken
+    );
+
+    addStep('phone_number_details', true, phoneDetails);
+  } catch (error) {
+    addStep('phone_number_details', false, erroParaJson(error));
+  }
+
+  try {
+    const phoneNumbers = await buscarPhoneNumbers(
+      connection.wabaId,
+      connection.businessToken
+    );
+
+    addStep('waba_phone_numbers', true, phoneNumbers);
+  } catch (error) {
+    addStep('waba_phone_numbers', false, erroParaJson(error));
+  }
+
+  try {
+    const apps = await listarAppsInscritosWaba(
+      connection.wabaId,
+      connection.businessToken
+    );
+
+    addStep('waba_subscribed_apps', true, apps);
+  } catch (error) {
+    addStep('waba_subscribed_apps', false, erroParaJson(error));
+  }
+
+  try {
+    const appSubscriptions = await listarAssinaturasDoApp();
+    addStep('app_subscriptions', true, appSubscriptions);
+  } catch (error) {
+    addStep('app_subscriptions', false, erroParaJson(error));
+  }
+
+  addStep('read_only_notice', true, {
+    message:
+      'Esta rota apenas consulta. Para tentar reconfigurar campos/webhook, use /api/whatsapp/platform-setup.',
+  });
+
+  const failedSteps = resultado.steps.filter((step) => !step.ok);
+
+  if (!failedSteps.length) {
+    resultado.conclusion =
+      'Diagnóstico de leitura concluído sem erros. Se mensagens ainda não chegam, rode platform-setup ou teste envio.';
+  } else {
+    resultado.conclusion =
+      'Diagnóstico encontrou bloqueios de leitura. Veja os steps com ok=false.';
+  }
+
+  registrarMetaEvent('platform_diagnostics_read_only', {
+    empresaId,
+    conclusion: resultado.conclusion,
+    failedSteps: failedSteps.map((step) => ({
+      name: step.name,
+      data: step.data,
+    })),
+  });
+
+  return resultado;
+}
+
+async function executarPlatformSetup(empresaId = 'empresa_demo') {
+  const connection = buscarConexaoAtiva(empresaId);
+
+  const resultado = {
+    success: true,
+    mode: 'setup',
+    checkedAt: agoraIso(),
+    empresaId,
+    publicAppUrl: PUBLIC_APP_URL,
+    webhookUrl: WEBHOOK_URL,
+    verifyToken: VERIFY_TOKEN,
+    appId: META_APP_ID || null,
+    graphVersion: META_GRAPH_VERSION,
+    connection: montarConexaoSegura(connection),
+    steps: [],
+    conclusion: '',
+  };
+
+  function addStep(name, ok, data) {
+    resultado.steps.push({
+      name,
+      ok,
+      data,
+      at: agoraIso(),
+    });
+  }
+
+  if (!connection) {
+    resultado.success = false;
+    resultado.conclusion = 'Nenhuma conexão ativa encontrada.';
+    addStep('connection_check', false, {
+      message: 'Nenhuma conexão ativa encontrada.',
+    });
+    return resultado;
+  }
+
+  if (!connection.businessToken) {
+    resultado.success = false;
+    resultado.conclusion = 'Conexão sem businessToken.';
+    addStep('business_token_check', false, {
+      message: 'businessToken ausente.',
+    });
+    return resultado;
+  }
+
+  addStep('connection_check', true, montarConexaoSegura(connection));
+
+  try {
+    const messagesResult = await configurarAssinaturaAppWhatsApp('messages');
+    addStep('configure_messages', true, messagesResult);
+  } catch (error) {
+    addStep('configure_messages', false, erroParaJson(error));
+  }
+
+  try {
+    const overrideResult = await inscreverWebhookWabaComOverride(
+      connection.wabaId,
+      connection.businessToken
+    );
+
+    connection.subscribedToWebhook = Boolean(overrideResult?.success ?? true);
+    connection.onboarding = connection.onboarding || {};
+    connection.onboarding.platformSetupOverride = overrideResult;
+    connection.updatedAt = agoraIso();
+    salvarDb();
+
+    addStep('subscribe_waba_with_override_callback', true, overrideResult);
+  } catch (error) {
+    registrarErroConexao(connection, 'platform_setup_waba_override', error);
+    addStep('subscribe_waba_with_override_callback', false, erroParaJson(error));
+
+    try {
+      const fallbackResult = await inscreverWebhookWaba(
+        connection.wabaId,
+        connection.businessToken
+      );
+
+      connection.subscribedToWebhook = Boolean(fallbackResult?.success ?? true);
+      connection.onboarding = connection.onboarding || {};
+      connection.onboarding.platformSetupFallback = fallbackResult;
+      connection.updatedAt = agoraIso();
+      salvarDb();
+
+      addStep('subscribe_waba_fallback', true, fallbackResult);
+    } catch (fallbackError) {
+      registrarErroConexao(connection, 'platform_setup_waba_fallback', fallbackError);
+      addStep('subscribe_waba_fallback', false, erroParaJson(fallbackError));
+    }
+  }
+
+  try {
+    const smbResult = await configurarAssinaturaAppWhatsApp(
+      'messages,smb_message_echoes'
+    );
+    addStep('try_configure_messages_and_smb_message_echoes', true, smbResult);
+  } catch (error) {
+    addStep('try_configure_messages_and_smb_message_echoes', false, erroParaJson(error));
+  }
+
+  try {
+    const historyResult = await configurarAssinaturaAppWhatsApp('messages,history');
+    addStep('try_configure_messages_and_history', true, historyResult);
+  } catch (error) {
+    addStep('try_configure_messages_and_history', false, erroParaJson(error));
+  }
+
+  try {
+    const appSubscriptionsAfter = await listarAssinaturasDoApp();
+    addStep('app_subscriptions_after_setup', true, appSubscriptionsAfter);
+  } catch (error) {
+    addStep('app_subscriptions_after_setup', false, erroParaJson(error));
+  }
+
+  try {
+    const appsAfter = await listarAppsInscritosWaba(
+      connection.wabaId,
+      connection.businessToken
+    );
+
+    addStep('waba_subscribed_apps_after_setup', true, appsAfter);
+  } catch (error) {
+    addStep('waba_subscribed_apps_after_setup', false, erroParaJson(error));
+  }
+
+  const failedSteps = resultado.steps.filter((step) => !step.ok);
+
+  if (!failedSteps.length) {
+    resultado.conclusion =
+      'Setup concluído sem erros. Agora envie mensagem nova e verifique logs por "Webhook recebido".';
+  } else {
+    resultado.conclusion =
+      'Setup executado com alguns bloqueios. Veja os steps com ok=false. Campos extras podem não estar disponíveis para este app.';
+  }
+
+  resultado.connection = montarConexaoSegura(buscarConexaoAtiva(empresaId));
+
+  registrarMetaEvent('platform_setup', {
+    empresaId,
+    conclusion: resultado.conclusion,
+    failedSteps: failedSteps.map((step) => ({
+      name: step.name,
+      data: step.data,
+    })),
+  });
+
+  return resultado;
+}
+
+async function executarTestSend(empresaId = 'empresa_demo', query = {}) {
+  const connection = buscarConexaoAtiva(empresaId);
+
+  const resultado = {
+    success: true,
+    checkedAt: agoraIso(),
+    empresaId,
+    to: query.to || null,
+    connection: montarConexaoSegura(connection),
+    result: null,
+    error: null,
+    conclusion: '',
+  };
+
+  if (!connection) {
+    resultado.success = false;
+    resultado.error = 'Nenhuma conexão ativa encontrada.';
+    resultado.conclusion = 'Conecte o WhatsApp antes de testar envio.';
+    return resultado;
+  }
+
+  try {
+    resultado.result = await enviarMensagemTesteViaApi(
+      connection,
+      query.to,
+      query.message
+    );
+
+    resultado.conclusion =
+      'Mensagem de teste enviada pela API. Confira se ela chegou no WhatsApp destino.';
+  } catch (error) {
+    resultado.success = false;
+    resultado.error = erroParaJson(error);
+    resultado.conclusion =
+      'Falha ao enviar pela API. O erro da Meta indica se é janela, número, permissão ou configuração.';
+  }
+
+  registrarMetaEvent('test_send', {
+    empresaId,
+    to: query.to || null,
+    success: resultado.success,
+    error: resultado.error,
+    result: resultado.result,
   });
 
   return resultado;
@@ -1744,6 +2117,77 @@ app.get('/api/meta/webhook-diagnostics', async (req, res) => {
   }
 });
 
+app.get('/api/whatsapp/platform-diagnostics', async (req, res) => {
+  try {
+    const empresaId = normalizarEmpresaId(req.query.empresaId || 'empresa_demo');
+    const diagnostics = await executarPlatformDiagnostics(empresaId);
+
+    res.json(diagnostics);
+  } catch (error) {
+    console.error('Erro em platform-diagnostics:', error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      details: error.details || null,
+    });
+  }
+});
+
+app.get('/api/whatsapp/platform-setup', async (req, res) => {
+  try {
+    const empresaId = normalizarEmpresaId(req.query.empresaId || 'empresa_demo');
+    const setup = await executarPlatformSetup(empresaId);
+
+    res.json(setup);
+  } catch (error) {
+    console.error('Erro em platform-setup:', error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      details: error.details || null,
+    });
+  }
+});
+
+app.post('/api/whatsapp/platform-setup', async (req, res) => {
+  try {
+    const empresaId = normalizarEmpresaId(req.body?.empresaId || 'empresa_demo');
+    const setup = await executarPlatformSetup(empresaId);
+
+    res.json(setup);
+  } catch (error) {
+    console.error('Erro em platform-setup:', error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      details: error.details || null,
+    });
+  }
+});
+
+app.get('/api/whatsapp/test-send', async (req, res) => {
+  try {
+    const empresaId = normalizarEmpresaId(req.query.empresaId || 'empresa_demo');
+    const result = await executarTestSend(empresaId, {
+      to: req.query.to,
+      message: req.query.message,
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('Erro em test-send:', error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      details: error.details || null,
+    });
+  }
+});
+
 app.get('/api/meta/events', (req, res) => {
   res.json({
     success: true,
@@ -1876,6 +2320,10 @@ app.post('/webhook', (req, res) => {
       });
     }
 
+    if (!message) {
+      console.log('Webhook recebido sem mensagem direta. Payload salvo em /api/meta/events.');
+    }
+
     return res.sendStatus(200);
   } catch (error) {
     console.error('Erro ao processar webhook:', error);
@@ -1890,4 +2338,7 @@ app.listen(PORT, () => {
   console.log(`Webhook: ${WEBHOOK_URL}`);
   console.log(`OAuth callback: ${OAUTH_REDIRECT_URI}`);
   console.log(`Diagnóstico webhook: ${PUBLIC_APP_URL}/api/meta/webhook-diagnostics`);
+  console.log(`Diagnóstico plataforma: ${PUBLIC_APP_URL}/api/whatsapp/platform-diagnostics`);
+  console.log(`Setup plataforma: ${PUBLIC_APP_URL}/api/whatsapp/platform-setup`);
+  console.log(`Teste envio: ${PUBLIC_APP_URL}/api/whatsapp/test-send?to=5548999999999`);
 });
