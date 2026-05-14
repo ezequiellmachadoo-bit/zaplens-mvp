@@ -30,6 +30,39 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+function agoraIso() {
+  return new Date().toISOString();
+}
+
+function horaCurta() {
+  return 'agora';
+}
+
+function gerarId(prefixo = '') {
+  const id = String(Date.now()) + '-' + Math.random().toString(16).slice(2);
+  return prefixo ? `${prefixo}_${id}` : id;
+}
+
+function normalizarEmpresaId(valor = 'empresa_demo') {
+  const texto = String(valor || 'empresa_demo');
+
+  if (texto.includes(':')) {
+    return texto.split(':')[0] || 'empresa_demo';
+  }
+
+  return texto || 'empresa_demo';
+}
+
+function extrairTelefoneDoState(valor = '') {
+  const texto = String(valor || '');
+
+  if (!texto.includes(':')) return null;
+
+  const telefone = texto.split(':').slice(1).join(':').replace(/\D/g, '');
+
+  return telefone || null;
+}
+
 function criarDbInicial() {
   return {
     empresas: [
@@ -37,8 +70,8 @@ function criarDbInicial() {
         id: 'empresa_demo',
         nome: 'Operação Principal',
         telefone: 'whatsapp_demo',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: agoraIso(),
+        updatedAt: agoraIso(),
       },
     ],
     whatsappConnections: [],
@@ -75,8 +108,8 @@ function criarDbInicial() {
         ],
         suggestion:
           'Perfeito. Para montar um orçamento mais preciso, me confirma a metragem aproximada, cidade/bairro e quando gostaria de iniciar?',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: agoraIso(),
+        updatedAt: agoraIso(),
       },
     ],
     fechamentos: [],
@@ -96,10 +129,37 @@ function aplicarMigracoes(dbAtual) {
       id: 'empresa_demo',
       nome: 'Operação Principal',
       telefone: 'whatsapp_demo',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: agoraIso(),
+      updatedAt: agoraIso(),
     });
   }
+
+  dbAtual.empresas = dbAtual.empresas.map((empresa) => ({
+    id: empresa.id || 'empresa_demo',
+    nome: empresa.nome || 'Operação Principal',
+    telefone: empresa.telefone || '',
+    createdAt: empresa.createdAt || agoraIso(),
+    updatedAt: empresa.updatedAt || agoraIso(),
+    ...empresa,
+  }));
+
+  dbAtual.whatsappConnections = dbAtual.whatsappConnections.map(
+    (connection) => ({
+      id: connection.id || gerarId('wa_connection'),
+      empresaId: normalizarEmpresaId(connection.empresaId || 'empresa_demo'),
+      provider: connection.provider || 'meta_embedded_signup',
+      status: connection.status || 'oauth_code_received',
+      phone: connection.phone || null,
+      code: connection.code || null,
+      businessToken: connection.businessToken || null,
+      wabaId: connection.wabaId || null,
+      phoneNumberId: connection.phoneNumberId || null,
+      rawQuery: connection.rawQuery || {},
+      createdAt: connection.createdAt || agoraIso(),
+      updatedAt: connection.updatedAt || agoraIso(),
+      ...connection,
+    })
+  );
 
   return dbAtual;
 }
@@ -131,19 +191,6 @@ function salvarDb() {
 
 let db = carregarDb();
 
-function agoraIso() {
-  return new Date().toISOString();
-}
-
-function horaCurta() {
-  return 'agora';
-}
-
-function gerarId(prefixo = '') {
-  const id = String(Date.now()) + '-' + Math.random().toString(16).slice(2);
-  return prefixo ? `${prefixo}_${id}` : id;
-}
-
 function gerarIniciais(nome = 'Cliente') {
   return nome
     .split(' ')
@@ -152,6 +199,30 @@ function gerarIniciais(nome = 'Cliente') {
     .map((parte) => parte[0])
     .join('')
     .toUpperCase();
+}
+
+function garantirEmpresa(empresaId = 'empresa_demo', dados = {}) {
+  const id = normalizarEmpresaId(empresaId);
+  let empresa = db.empresas.find((item) => item.id === id);
+
+  if (!empresa) {
+    empresa = {
+      id,
+      nome: dados.nome || 'Operação Principal',
+      telefone: dados.telefone || '',
+      createdAt: agoraIso(),
+      updatedAt: agoraIso(),
+    };
+
+    db.empresas.push(empresa);
+  }
+
+  empresa.updatedAt = agoraIso();
+
+  if (dados.nome) empresa.nome = dados.nome;
+  if (dados.telefone) empresa.telefone = dados.telefone;
+
+  return empresa;
 }
 
 function garantirEtapa(conversa, etapa) {
@@ -167,7 +238,7 @@ function registrarMetaEvent(tipo, payload = {}) {
     createdAt: agoraIso(),
   });
 
-  db.metaEvents = db.metaEvents.slice(0, 100);
+  db.metaEvents = db.metaEvents.slice(0, 150);
   salvarDb();
 }
 
@@ -315,16 +386,19 @@ function criarOuAtualizarConversa({
   telefone,
   texto,
 }) {
+  const idEmpresa = normalizarEmpresaId(empresaId);
   const classificacao = classificarMensagem(texto);
 
+  garantirEmpresa(idEmpresa);
+
   let conversa = db.conversas.find(
-    (item) => item.empresaId === empresaId && item.phone === telefone
+    (item) => item.empresaId === idEmpresa && item.phone === telefone
   );
 
   if (!conversa) {
     conversa = {
       id: gerarId('conversa'),
-      empresaId,
+      empresaId: idEmpresa,
       name: nome || `Cliente ${telefone}`,
       initials: gerarIniciais(nome || 'Cliente'),
       phone: telefone,
@@ -373,21 +447,88 @@ function criarOuAtualizarConversa({
   return conversa;
 }
 
+function buscarConexaoAtiva(empresaId = 'empresa_demo') {
+  const idEmpresa = normalizarEmpresaId(empresaId);
+
+  return db.whatsappConnections.find(
+    (item) =>
+      normalizarEmpresaId(item.empresaId) === idEmpresa &&
+      item.status !== 'revoked'
+  );
+}
+
+function salvarConexaoWhatsapp({
+  empresaId,
+  phone,
+  code,
+  status,
+  rawQuery,
+  provider = 'meta_embedded_signup',
+}) {
+  const idEmpresa = normalizarEmpresaId(empresaId);
+  const telefone = phone || extrairTelefoneDoState(rawQuery?.state) || null;
+
+  garantirEmpresa(idEmpresa, {
+    telefone,
+  });
+
+  let connection = buscarConexaoAtiva(idEmpresa);
+
+  if (!connection) {
+    connection = {
+      id: gerarId('wa_connection'),
+      empresaId: idEmpresa,
+      provider,
+      status: status || 'oauth_code_received',
+      phone: telefone,
+      code: code || null,
+      businessToken: null,
+      wabaId: null,
+      phoneNumberId: null,
+      rawQuery: rawQuery || {},
+      createdAt: agoraIso(),
+      updatedAt: agoraIso(),
+      notes:
+        'Código OAuth recebido. Próxima etapa: trocar o code por token e vincular WABA/phone_number_id.',
+    };
+
+    db.whatsappConnections.unshift(connection);
+  } else {
+    connection.status = status || connection.status || 'oauth_code_received';
+    connection.phone = telefone || connection.phone || null;
+    connection.code = code || connection.code || null;
+    connection.rawQuery = rawQuery || connection.rawQuery || {};
+    connection.provider = provider;
+    connection.updatedAt = agoraIso();
+    connection.notes =
+      'Código OAuth recebido. Próxima etapa: trocar o code por token e vincular WABA/phone_number_id.';
+  }
+
+  salvarDb();
+
+  return connection;
+}
+
 async function enviarMensagemWhatsApp({ telefone, mensagem }) {
-  if (!WHATSAPP_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
-    console.log('WhatsApp real ainda não configurado. Mensagem salva localmente.');
+  const token = WHATSAPP_TOKEN;
+  const phoneNumberId = WHATSAPP_PHONE_NUMBER_ID;
+
+  if (!token || !phoneNumberId) {
+    console.log(
+      'WhatsApp real ainda não configurado. Mensagem salva localmente.'
+    );
     return {
       simulated: true,
       message: 'WhatsApp token/phone_number_id ausente. Envio real ignorado.',
     };
   }
 
-  const url = `https://graph.facebook.com/v20.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
+  const url = `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`;
 
   const resposta = await fetch(url, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${WHATSAPP_TOKEN}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -410,6 +551,107 @@ async function enviarMensagemWhatsApp({ telefone, mensagem }) {
   return json;
 }
 
+function renderOAuthCallbackPage({
+  ok,
+  title,
+  message,
+  status,
+  empresaId,
+  error,
+}) {
+  const safeTitle = title || (ok ? 'WhatsApp conectado' : 'Conexão não concluída');
+  const safeStatus = status || (ok ? 'connected_initial' : 'error');
+  const safeEmpresaId = empresaId || 'empresa_demo';
+
+  return `
+    <!doctype html>
+    <html lang="pt-BR">
+      <head>
+        <meta charset="utf-8" />
+        <title>ZapLens | ${safeTitle}</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            background: #f8fafc;
+            color: #0f172a;
+            padding: 40px;
+          }
+
+          .card {
+            max-width: 620px;
+            margin: 60px auto;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            padding: 28px;
+            box-shadow: 0 18px 50px rgba(15,23,42,.08);
+          }
+
+          h1 {
+            margin: 0 0 12px;
+            color: ${ok ? '#0f766e' : '#b91c1c'};
+          }
+
+          p {
+            color: #475569;
+            line-height: 1.6;
+          }
+
+          code {
+            background: #f1f5f9;
+            padding: 3px 6px;
+            border-radius: 6px;
+          }
+
+          .mini {
+            margin-top: 18px;
+            font-size: 12px;
+            color: #64748b;
+          }
+        </style>
+      </head>
+
+      <body>
+        <div class="card">
+          <h1>${safeTitle}</h1>
+          <p>${message}</p>
+          <p>Status: <code>${safeStatus}</code></p>
+          <p>Empresa: <code>${safeEmpresaId}</code></p>
+          ${error ? `<p><strong>Erro:</strong> ${error}</p>` : ''}
+          <p class="mini">
+            Esta janela será fechada automaticamente. Se não fechar, pode fechar manualmente.
+          </p>
+        </div>
+
+        <script>
+          const payload = {
+            type: 'ZAPLENS_WHATSAPP_CONNECTION',
+            ok: ${JSON.stringify(Boolean(ok))},
+            status: ${JSON.stringify(safeStatus)},
+            empresaId: ${JSON.stringify(safeEmpresaId)}
+          };
+
+          try {
+            if (window.opener) {
+              window.opener.postMessage(payload, window.location.origin);
+            }
+          } catch (error) {
+            console.log('Não foi possível avisar a janela principal.', error);
+          }
+
+          setTimeout(() => {
+            try {
+              window.close();
+            } catch (error) {
+              console.log('Não foi possível fechar a janela automaticamente.', error);
+            }
+          }, 1800);
+        </script>
+      </body>
+    </html>
+  `;
+}
+
 app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
@@ -427,16 +669,19 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/api/conversations', (req, res) => {
-  const empresaId = req.query.empresaId || 'empresa_demo';
+  const empresaId = normalizarEmpresaId(req.query.empresaId || 'empresa_demo');
 
-  const conversas = db.conversas.filter((item) => item.empresaId === empresaId);
+  const conversas = db.conversas.filter(
+    (item) => normalizarEmpresaId(item.empresaId) === empresaId
+  );
 
   res.json({
     success: true,
     empresaId,
     conversas,
     fechamentos: db.fechamentos.filter(
-      (item) => !item.empresaId || item.empresaId === empresaId
+      (item) =>
+        !item.empresaId || normalizarEmpresaId(item.empresaId) === empresaId
     ),
   });
 });
@@ -445,7 +690,7 @@ app.post('/api/simulate-message', (req, res) => {
   const texto = req.body?.message || 'Oi, quanto fica para fazer esse serviço?';
   const nome = req.body?.name || `Novo Cliente ${db.conversas.length + 1}`;
   const telefone = req.body?.phone || `55${Date.now()}`;
-  const empresaId = req.body?.empresaId || 'empresa_demo';
+  const empresaId = normalizarEmpresaId(req.body?.empresaId || 'empresa_demo');
 
   const conversa = criarOuAtualizarConversa({
     empresaId,
@@ -604,17 +849,29 @@ app.post('/api/reset', (req, res) => {
 });
 
 app.get('/api/whatsapp/status', (req, res) => {
-  const empresaId = req.query.empresaId || 'empresa_demo';
-
-  const connection = db.whatsappConnections.find(
-    (item) => item.empresaId === empresaId && item.status !== 'revoked'
-  );
+  const empresaId = normalizarEmpresaId(req.query.empresaId || 'empresa_demo');
+  const connection = buscarConexaoAtiva(empresaId);
 
   res.json({
     success: true,
     empresaId,
     connected: Boolean(connection),
-    connection: connection || null,
+    connection: connection
+      ? {
+          id: connection.id,
+          empresaId: connection.empresaId,
+          provider: connection.provider,
+          status: connection.status,
+          phone: connection.phone,
+          wabaId: connection.wabaId,
+          phoneNumberId: connection.phoneNumberId,
+          createdAt: connection.createdAt,
+          updatedAt: connection.updatedAt,
+          notes: connection.notes,
+          hasCode: Boolean(connection.code),
+          hasBusinessToken: Boolean(connection.businessToken),
+        }
+      : null,
     meta: {
       hasAppId: Boolean(META_APP_ID),
       hasAppSecret: Boolean(META_APP_SECRET),
@@ -640,83 +897,103 @@ app.get('/api/whatsapp/connect-info', (req, res) => {
   });
 });
 
+app.get('/api/whatsapp/connections', (req, res) => {
+  const empresaId = req.query.empresaId
+    ? normalizarEmpresaId(req.query.empresaId)
+    : null;
+
+  const connections = empresaId
+    ? db.whatsappConnections.filter(
+        (item) => normalizarEmpresaId(item.empresaId) === empresaId
+      )
+    : db.whatsappConnections;
+
+  res.json({
+    success: true,
+    total: connections.length,
+    connections: connections.map((connection) => ({
+      id: connection.id,
+      empresaId: connection.empresaId,
+      provider: connection.provider,
+      status: connection.status,
+      phone: connection.phone,
+      wabaId: connection.wabaId,
+      phoneNumberId: connection.phoneNumberId,
+      createdAt: connection.createdAt,
+      updatedAt: connection.updatedAt,
+      hasCode: Boolean(connection.code),
+      hasBusinessToken: Boolean(connection.businessToken),
+      notes: connection.notes,
+    })),
+  });
+});
+
+app.post('/api/whatsapp/disconnect', (req, res) => {
+  const empresaId = normalizarEmpresaId(req.body?.empresaId || 'empresa_demo');
+
+  db.whatsappConnections = db.whatsappConnections.map((connection) => {
+    if (normalizarEmpresaId(connection.empresaId) !== empresaId) return connection;
+
+    return {
+      ...connection,
+      status: 'revoked',
+      updatedAt: agoraIso(),
+      notes: 'Conexão desconectada pelo ZapLens.',
+    };
+  });
+
+  salvarDb();
+
+  res.json({
+    success: true,
+    message: 'WhatsApp desconectado.',
+    empresaId,
+  });
+});
+
 app.get('/api/whatsapp/oauth/callback', async (req, res) => {
   const { code, state, error, error_description } = req.query;
+  const empresaId = normalizarEmpresaId(state || 'empresa_demo');
+  const phone = extrairTelefoneDoState(state);
 
   registrarMetaEvent('oauth_callback', {
     query: req.query,
+    empresaId,
+    phone,
     receivedAt: agoraIso(),
   });
 
   if (error) {
-    return res.status(400).send(`
-      <!doctype html>
-      <html lang="pt-BR">
-        <head>
-          <meta charset="utf-8" />
-          <title>ZapLens | Conexão não concluída</title>
-          <style>
-            body { font-family: Arial, sans-serif; background:#f8fafc; color:#0f172a; padding:40px; }
-            .card { max-width:620px; margin:60px auto; background:white; border:1px solid #e2e8f0; border-radius:18px; padding:28px; box-shadow:0 18px 50px rgba(15,23,42,.08); }
-            h1 { margin:0 0 12px; }
-            p { color:#475569; line-height:1.6; }
-          </style>
-        </head>
-        <body>
-          <div class="card">
-            <h1>Conexão não concluída</h1>
-            <p>A Meta retornou um erro durante a conexão.</p>
-            <p><strong>Erro:</strong> ${error}</p>
-            <p>${error_description || ''}</p>
-          </div>
-        </body>
-      </html>
-    `);
+    return res.status(400).send(
+      renderOAuthCallbackPage({
+        ok: false,
+        title: 'Conexão não concluída',
+        message: 'A Meta retornou um erro durante a conexão.',
+        status: 'error',
+        empresaId,
+        error: `${error} ${error_description || ''}`.trim(),
+      })
+    );
   }
 
-  const empresaId = state || 'empresa_demo';
-
-  const connection = {
-    id: gerarId('wa_connection'),
+  const connection = salvarConexaoWhatsapp({
     empresaId,
-    provider: 'meta_embedded_signup',
-    status: code ? 'oauth_code_received' : 'callback_without_code',
+    phone,
     code: code || null,
+    status: code ? 'oauth_code_received' : 'callback_without_code',
     rawQuery: req.query,
-    createdAt: agoraIso(),
-    updatedAt: agoraIso(),
-    notes:
-      'Código OAuth recebido. Próxima etapa: trocar o code por token e vincular WABA/phone_number_id.',
-  };
+  });
 
-  db.whatsappConnections.unshift(connection);
-  salvarDb();
-
-  return res.send(`
-    <!doctype html>
-    <html lang="pt-BR">
-      <head>
-        <meta charset="utf-8" />
-        <title>ZapLens | WhatsApp conectado</title>
-        <style>
-          body { font-family: Arial, sans-serif; background:#f8fafc; color:#0f172a; padding:40px; }
-          .card { max-width:620px; margin:60px auto; background:white; border:1px solid #e2e8f0; border-radius:18px; padding:28px; box-shadow:0 18px 50px rgba(15,23,42,.08); }
-          h1 { margin:0 0 12px; color:#0f766e; }
-          p { color:#475569; line-height:1.6; }
-          code { background:#f1f5f9; padding:3px 6px; border-radius:6px; }
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <h1>WhatsApp recebido pelo ZapLens</h1>
-          <p>O retorno da Meta chegou corretamente no backend.</p>
-          <p>Status salvo: <code>${connection.status}</code></p>
-          <p>Empresa: <code>${empresaId}</code></p>
-          <p>Agora podemos avançar para trocar o código por token e finalizar a conexão do WhatsApp.</p>
-        </div>
-      </body>
-    </html>
-  `);
+  return res.send(
+    renderOAuthCallbackPage({
+      ok: true,
+      title: 'WhatsApp recebido pelo ZapLens',
+      message:
+        'A autorização chegou ao ZapLens. Agora estamos preparando a conexão completa para mensagens e histórico.',
+      status: connection.status,
+      empresaId,
+    })
+  );
 });
 
 app.post('/api/meta/deauthorize', (req, res) => {
@@ -820,6 +1097,19 @@ app.post('/webhook', (req, res) => {
         nome,
         telefone,
         texto,
+      });
+    }
+
+    if (message && message.type === 'audio') {
+      const telefone = message.from;
+      const nome = contact?.profile?.name || `Cliente ${telefone}`;
+
+      criarOuAtualizarConversa({
+        empresaId: 'empresa_demo',
+        nome,
+        telefone,
+        texto:
+          'Áudio recebido. Transcrição automática será implementada na próxima etapa de inteligência.',
       });
     }
 

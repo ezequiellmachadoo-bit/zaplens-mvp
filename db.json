@@ -3,7 +3,9 @@
     {
       "id": "empresa_demo",
       "nome": "Operação Principal",
-      "telefone": "whatsapp_demo"
+      "telefone": "whatsapp_demo",
+      "createdAt": "2026-05-14T12:37:42.004Z",
+      "updatedAt": "2026-05-14T12:37:42.004Z"
     }
   ],
   "conversas": [],
