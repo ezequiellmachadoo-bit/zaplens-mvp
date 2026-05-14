@@ -1714,6 +1714,9 @@
               <button id="setupConnectWhatsAppBtn" class="btn btn-primary btn-full" type="button">
                 Conectar WhatsApp agora
               </button>
+              <button id="setupDisconnectWhatsAppBtn" class="btn btn-secondary btn-full" type="button" style="display:none;">
+                Desconectar WhatsApp
+              </button>
             </div>
 
             <p class="wa-helper">
@@ -1766,6 +1769,9 @@
               <div class="wa-actions">
                 <button id="connectWhatsAppBtn" class="btn btn-primary btn-full" type="button">
                   Conectar WhatsApp
+                </button>
+                <button id="disconnectWhatsAppBtn" class="btn btn-secondary btn-full" type="button" style="display:none;">
+                  Desconectar WhatsApp
                 </button>
               </div>
             </div>
@@ -2786,35 +2792,57 @@
         const button = document.getElementById("connectWhatsAppBtn");
         const setupButton = document.getElementById("setupConnectWhatsAppBtn");
         const sidebarText = document.getElementById("waSidebarText");
+        const disconnectButton = document.getElementById("disconnectWhatsAppBtn");
+        const setupDisconnectButton = document.getElementById("setupDisconnectWhatsAppBtn");
 
         setStatusPill(pill, connected);
         setStatusPill(pillSetup, connected);
 
         if (sidebarText) {
           sidebarText.textContent = connected
-            ? "WhatsApp conectado e pronto para operação."
+            ? "WhatsApp conectado. A operação já pode seguir para o painel."
             : "Conecte para receber e organizar conversas reais.";
         }
 
-        [button, setupButton].forEach((btn) => {
-          if (!btn) return;
-
+        if (setupButton) {
           if (connected) {
-            btn.textContent = "WhatsApp conectado";
-            btn.disabled = true;
-            btn.classList.add("btn-secondary");
-            btn.classList.remove("btn-primary");
-            return;
+            setupButton.textContent = "Entrar na central";
+            setupButton.disabled = false;
+            setupButton.classList.add("btn-primary");
+            setupButton.classList.remove("btn-secondary");
+          } else {
+            setupButton.disabled = !readyForEmbeddedSignup;
+            setupButton.textContent = readyForEmbeddedSignup
+              ? "Conectar WhatsApp agora"
+              : "Configuração Meta pendente";
+            setupButton.classList.toggle("btn-primary", readyForEmbeddedSignup);
+            setupButton.classList.toggle("btn-secondary", !readyForEmbeddedSignup);
           }
+        }
 
-          btn.disabled = !readyForEmbeddedSignup;
-          btn.textContent = readyForEmbeddedSignup
-            ? (btn.id === "setupConnectWhatsAppBtn" ? "Conectar WhatsApp agora" : "Conectar WhatsApp")
-            : "Configuração Meta pendente";
+        if (button) {
+          if (connected) {
+            button.textContent = "WhatsApp conectado";
+            button.disabled = true;
+            button.classList.add("btn-secondary");
+            button.classList.remove("btn-primary");
+          } else {
+            button.disabled = !readyForEmbeddedSignup;
+            button.textContent = readyForEmbeddedSignup
+              ? "Conectar WhatsApp"
+              : "Configuração Meta pendente";
+            button.classList.toggle("btn-primary", readyForEmbeddedSignup);
+            button.classList.toggle("btn-secondary", !readyForEmbeddedSignup);
+          }
+        }
 
-          btn.classList.toggle("btn-primary", readyForEmbeddedSignup);
-          btn.classList.toggle("btn-secondary", !readyForEmbeddedSignup);
-        });
+        if (disconnectButton) {
+          disconnectButton.style.display = connected ? "block" : "none";
+        }
+
+        if (setupDisconnectButton) {
+          setupDisconnectButton.style.display = connected ? "block" : "none";
+        }
       }
 
       function conectarWhatsApp() {
@@ -2839,7 +2867,7 @@
         const appId = whatsappConnectInfo.appId;
         const configurationId = whatsappConnectInfo.configurationId;
         const redirectUri = encodeURIComponent(whatsappConnectInfo.redirectUri);
-        const state = encodeURIComponent("empresa_demo");
+        const state = encodeURIComponent(`empresa_demo:${phone}`);
 
         const extras = encodeURIComponent(
           JSON.stringify({
@@ -2886,8 +2914,6 @@
 
             if (whatsappStatus?.connected) {
               abrirPainel();
-            } else {
-              alert("A conexão ainda não foi confirmada. Conclua a autorização da Meta para entrar na central.");
             }
           }
         }, 1200);
@@ -2903,6 +2929,53 @@
         document.querySelectorAll("#mobileNav button").forEach((button) => {
           button.classList.toggle("active", button.dataset.mobileSection === sectionClass);
         });
+      }
+
+
+      async function acionarBotaoConexaoSetup() {
+        if (whatsappStatus?.connected) {
+          abrirPainel();
+          return;
+        }
+
+        conectarWhatsApp();
+      }
+
+      async function desconectarWhatsApp() {
+        const confirmar = confirm(
+          "Deseja desconectar este WhatsApp do ZapLens? Você poderá conectar novamente depois."
+        );
+
+        if (!confirmar) return;
+
+        try {
+          await apiPost("/api/whatsapp/disconnect", {
+            empresaId: "empresa_demo",
+          });
+
+          whatsappStatus = {
+            success: true,
+            empresaId: "empresa_demo",
+            connected: false,
+            connection: null,
+            meta: whatsappStatus?.meta || {},
+          };
+
+          localStorage.removeItem("zaplens_business_whatsapp");
+
+          const setupPhone = document.getElementById("businessWhatsAppInput");
+          const sidebarPhone = document.getElementById("businessWhatsAppInputSidebar");
+          if (setupPhone) setupPhone.value = "";
+          if (sidebarPhone) sidebarPhone.value = "";
+
+          await carregarStatusWhatsApp();
+          renderWhatsAppStatus();
+
+          alert("WhatsApp desconectado com sucesso.");
+        } catch (error) {
+          console.error(error);
+          alert("Não foi possível desconectar agora. Tente novamente.");
+        }
       }
 
       document.addEventListener("DOMContentLoaded", () => {
@@ -2930,12 +3003,26 @@
         const companyBox = document.getElementById("companyNameBox");
         if (companyBox) companyBox.textContent = companyName;
 
-        document.getElementById("loginBtn")?.addEventListener("click", async () => { switchScreen("setupScreen"); await carregarStatusWhatsApp(); });
-        document.getElementById("setupConnectWhatsAppBtn")?.addEventListener("click", conectarWhatsApp);
+        window.addEventListener("message", async (event) => {
+          if (event?.data?.type !== "ZAPLENS_WHATSAPP_CONNECTION") return;
 
-        document.getElementById("logoutBtn")?.addEventListener("click", () => switchScreen("loginScreen"));
+          document.getElementById("connectLoading")?.classList.remove("active");
+          await carregarStatusWhatsApp();
+
+          if (event.data.ok) {
+            abrirPainel();
+          }
+        });
+
+        document.getElementById("loginBtn")?.addEventListener("click", async () => { switchScreen("setupScreen"); await carregarStatusWhatsApp(); });
+        document.getElementById("demoBtn")?.addEventListener("click", abrirPainel);
+        document.getElementById("setupConnectWhatsAppBtn")?.addEventListener("click", acionarBotaoConexaoSetup);
+
+        document.getElementById("logoutBtn")?.addEventListener("click", () => { document.getElementById("connectLoading")?.classList.remove("active"); switchScreen("loginScreen"); });
         document.getElementById("resetBtn")?.addEventListener("click", resetData);
         document.getElementById("connectWhatsAppBtn")?.addEventListener("click", conectarWhatsApp);
+        document.getElementById("disconnectWhatsAppBtn")?.addEventListener("click", desconectarWhatsApp);
+        document.getElementById("setupDisconnectWhatsAppBtn")?.addEventListener("click", desconectarWhatsApp);
         document.getElementById("simulateMessageBtn")?.addEventListener("click", createNewConversation);
 
         document.getElementById("sendBtn")?.addEventListener("click", sendCurrentMessage);
