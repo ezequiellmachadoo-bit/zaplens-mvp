@@ -24,6 +24,7 @@ const PUBLIC_APP_URL =
   process.env.PUBLIC_APP_URL || 'https://zaplens-mvp-production.up.railway.app';
 
 const OAUTH_REDIRECT_URI = `${PUBLIC_APP_URL}/api/whatsapp/oauth/callback`;
+const WEBHOOK_URL = `${PUBLIC_APP_URL}/webhook`;
 const GRAPH_BASE_URL = `https://graph.facebook.com/${META_GRAPH_VERSION}`;
 
 const __filename = fileURLToPath(import.meta.url);
@@ -259,7 +260,7 @@ function registrarMetaEvent(tipo, payload = {}) {
     createdAt: agoraIso(),
   });
 
-  db.metaEvents = db.metaEvents.slice(0, 200);
+  db.metaEvents = db.metaEvents.slice(0, 300);
   salvarDb();
 }
 
@@ -274,10 +275,18 @@ function registrarErroConexao(connection, etapa, error) {
   };
 
   connection.errors.unshift(erro);
-  connection.errors = connection.errors.slice(0, 20);
+  connection.errors = connection.errors.slice(0, 30);
   connection.updatedAt = agoraIso();
 
   console.error(`[${etapa}]`, erro);
+}
+
+function erroParaJson(error) {
+  return {
+    ok: false,
+    message: error?.message || String(error),
+    details: error?.details || null,
+  };
 }
 
 async function graphGet(pathname, accessToken, params = {}) {
@@ -326,7 +335,7 @@ async function graphPost(pathname, accessToken, body = {}, params = {}) {
       Authorization: accessToken ? `Bearer ${accessToken}` : '',
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(body || {}),
   });
 
   const json = await response.json().catch(() => ({}));
@@ -338,6 +347,39 @@ async function graphPost(pathname, accessToken, body = {}, params = {}) {
   }
 
   return json;
+}
+
+async function graphPostForm(pathname, accessToken, params = {}) {
+  const url = new URL(`${GRAPH_BASE_URL}${pathname}`);
+
+  if (accessToken) {
+    url.searchParams.set('access_token', accessToken);
+  }
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      url.searchParams.set(key, String(value));
+    }
+  });
+
+  const response = await fetch(url, {
+    method: 'POST',
+  });
+
+  const json = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const error = new Error(json?.error?.message || 'Erro na Graph API.');
+    error.details = json;
+    throw error;
+  }
+
+  return json;
+}
+
+function getAppAccessToken() {
+  if (!META_APP_ID || !META_APP_SECRET) return null;
+  return `${META_APP_ID}|${META_APP_SECRET}`;
 }
 
 async function trocarCodePorBusinessToken(code) {
@@ -360,7 +402,7 @@ async function trocarCodePorBusinessToken(code) {
 async function debugToken(accessToken) {
   if (!META_APP_ID || !META_APP_SECRET || !accessToken) return null;
 
-  const appAccessToken = `${META_APP_ID}|${META_APP_SECRET}`;
+  const appAccessToken = getAppAccessToken();
 
   return graphGet('/debug_token', null, {
     input_token: accessToken,
@@ -435,10 +477,53 @@ function escolherPhoneNumber(phoneNumbers = [], telefoneInformado = '') {
   return phoneNumbers[0];
 }
 
+async function listarAppsInscritosWaba(wabaId, accessToken) {
+  if (!wabaId || !accessToken) {
+    throw new Error('WABA ID ou token ausente para listar subscribed_apps.');
+  }
+
+  return graphGet(`/${wabaId}/subscribed_apps`, accessToken, {});
+}
+
 async function inscreverWebhookWaba(wabaId, accessToken) {
   if (!wabaId || !accessToken) return null;
 
   return graphPost(`/${wabaId}/subscribed_apps`, accessToken, {});
+}
+
+async function inscreverWebhookWabaComOverride(wabaId, accessToken) {
+  if (!wabaId || !accessToken) return null;
+
+  return graphPost(`/${wabaId}/subscribed_apps`, accessToken, {
+    override_callback_uri: WEBHOOK_URL,
+    verify_token: VERIFY_TOKEN,
+  });
+}
+
+async function listarAssinaturasDoApp() {
+  const appAccessToken = getAppAccessToken();
+
+  if (!appAccessToken || !META_APP_ID) {
+    throw new Error('App access token ausente para listar subscriptions do app.');
+  }
+
+  return graphGet(`/${META_APP_ID}/subscriptions`, appAccessToken, {});
+}
+
+async function configurarAssinaturaAppWhatsApp() {
+  const appAccessToken = getAppAccessToken();
+
+  if (!appAccessToken || !META_APP_ID) {
+    throw new Error('App access token ausente para configurar subscriptions do app.');
+  }
+
+  return graphPostForm(`/${META_APP_ID}/subscriptions`, appAccessToken, {
+    object: 'whatsapp_business_account',
+    callback_url: WEBHOOK_URL,
+    verify_token: VERIFY_TOKEN,
+    fields: 'messages',
+    include_values: 'true',
+  });
 }
 
 async function completarConexaoMeta(connection) {
@@ -589,10 +674,20 @@ async function completarConexaoMeta(connection) {
       connection.updatedAt = agoraIso();
       salvarDb();
 
-      const subscription = await inscreverWebhookWaba(
-        connection.wabaId,
-        connection.businessToken
-      );
+      let subscription = null;
+
+      try {
+        subscription = await inscreverWebhookWabaComOverride(
+          connection.wabaId,
+          connection.businessToken
+        );
+      } catch (overrideError) {
+        registrarErroConexao(connection, 'subscribe_webhook_override', overrideError);
+        subscription = await inscreverWebhookWaba(
+          connection.wabaId,
+          connection.businessToken
+        );
+      }
 
       connection.subscribedToWebhook = Boolean(subscription?.success ?? true);
       connection.onboarding.subscription = subscription || {
@@ -1099,7 +1194,8 @@ function montarConexaoSegura(connection) {
     hasCode: Boolean(connection.code),
     codeUsed: Boolean(connection.codeUsed),
     hasBusinessToken: Boolean(connection.businessToken),
-    businessTokenMasked: connection.businessTokenMasked || mascararToken(connection.businessToken),
+    businessTokenMasked:
+      connection.businessTokenMasked || mascararToken(connection.businessToken),
     errors: connection.errors || [],
     onboarding: {
       redirectUriUsed: connection.onboarding?.redirectUriUsed || null,
@@ -1109,6 +1205,171 @@ function montarConexaoSegura(connection) {
       subscription: connection.onboarding?.subscription || null,
     },
   };
+}
+
+async function executarWebhookDiagnostics(empresaId = 'empresa_demo') {
+  const connection = buscarConexaoAtiva(empresaId);
+
+  const resultado = {
+    success: true,
+    checkedAt: agoraIso(),
+    empresaId,
+    publicAppUrl: PUBLIC_APP_URL,
+    webhookUrl: WEBHOOK_URL,
+    verifyToken: VERIFY_TOKEN,
+    appId: META_APP_ID || null,
+    hasAppSecret: Boolean(META_APP_SECRET),
+    connection: montarConexaoSegura(connection),
+    steps: [],
+    conclusion: '',
+  };
+
+  function addStep(name, ok, data) {
+    resultado.steps.push({
+      name,
+      ok,
+      data,
+      at: agoraIso(),
+    });
+  }
+
+  if (!connection) {
+    resultado.success = false;
+    resultado.conclusion = 'Nenhuma conexão ativa encontrada.';
+    addStep('connection_check', false, {
+      message: 'Nenhuma conexão ativa encontrada.',
+    });
+    return resultado;
+  }
+
+  if (!connection.businessToken) {
+    resultado.success = false;
+    resultado.conclusion = 'Conexão ativa não possui businessToken.';
+    addStep('token_check', false, {
+      message: 'businessToken ausente.',
+    });
+    return resultado;
+  }
+
+  if (!connection.wabaId) {
+    resultado.success = false;
+    resultado.conclusion = 'Conexão ativa não possui WABA ID.';
+    addStep('waba_check', false, {
+      message: 'wabaId ausente.',
+    });
+    return resultado;
+  }
+
+  addStep('connection_check', true, {
+    status: connection.status,
+    wabaId: connection.wabaId,
+    phoneNumberId: connection.phoneNumberId,
+    displayPhoneNumber: connection.displayPhoneNumber,
+    subscribedToWebhook: connection.subscribedToWebhook,
+  });
+
+  try {
+    const apps = await listarAppsInscritosWaba(
+      connection.wabaId,
+      connection.businessToken
+    );
+
+    addStep('list_waba_subscribed_apps_before', true, apps);
+  } catch (error) {
+    addStep('list_waba_subscribed_apps_before', false, erroParaJson(error));
+  }
+
+  try {
+    const overrideResult = await inscreverWebhookWabaComOverride(
+      connection.wabaId,
+      connection.businessToken
+    );
+
+    connection.subscribedToWebhook = Boolean(overrideResult?.success ?? true);
+    connection.onboarding = connection.onboarding || {};
+    connection.onboarding.subscriptionOverride = overrideResult;
+    connection.updatedAt = agoraIso();
+    salvarDb();
+
+    addStep('subscribe_waba_with_override_callback', true, overrideResult);
+  } catch (error) {
+    registrarErroConexao(connection, 'diagnostic_subscribe_waba_override', error);
+    addStep('subscribe_waba_with_override_callback', false, erroParaJson(error));
+
+    try {
+      const fallbackResult = await inscreverWebhookWaba(
+        connection.wabaId,
+        connection.businessToken
+      );
+
+      connection.subscribedToWebhook = Boolean(fallbackResult?.success ?? true);
+      connection.onboarding = connection.onboarding || {};
+      connection.onboarding.subscriptionFallback = fallbackResult;
+      connection.updatedAt = agoraIso();
+      salvarDb();
+
+      addStep('subscribe_waba_fallback', true, fallbackResult);
+    } catch (fallbackError) {
+      registrarErroConexao(connection, 'diagnostic_subscribe_waba_fallback', fallbackError);
+      addStep('subscribe_waba_fallback', false, erroParaJson(fallbackError));
+    }
+  }
+
+  try {
+    const appsAfter = await listarAppsInscritosWaba(
+      connection.wabaId,
+      connection.businessToken
+    );
+
+    addStep('list_waba_subscribed_apps_after', true, appsAfter);
+  } catch (error) {
+    addStep('list_waba_subscribed_apps_after', false, erroParaJson(error));
+  }
+
+  try {
+    const appSubscriptionsBefore = await listarAssinaturasDoApp();
+    addStep('list_app_subscriptions_before', true, appSubscriptionsBefore);
+  } catch (error) {
+    addStep('list_app_subscriptions_before', false, erroParaJson(error));
+  }
+
+  try {
+    const appSubscriptionResult = await configurarAssinaturaAppWhatsApp();
+
+    addStep('configure_app_subscription_whatsapp_business_account_messages', true, appSubscriptionResult);
+  } catch (error) {
+    addStep('configure_app_subscription_whatsapp_business_account_messages', false, erroParaJson(error));
+  }
+
+  try {
+    const appSubscriptionsAfter = await listarAssinaturasDoApp();
+    addStep('list_app_subscriptions_after', true, appSubscriptionsAfter);
+  } catch (error) {
+    addStep('list_app_subscriptions_after', false, erroParaJson(error));
+  }
+
+  const failedSteps = resultado.steps.filter((step) => !step.ok);
+
+  if (!failedSteps.length) {
+    resultado.conclusion =
+      'Diagnóstico concluído sem erros. Agora envie uma nova mensagem e verifique os logs por "Webhook recebido".';
+  } else {
+    resultado.conclusion =
+      'Diagnóstico encontrou erros. Veja os steps com ok=false para saber o bloqueio exato.';
+  }
+
+  resultado.connection = montarConexaoSegura(buscarConexaoAtiva(empresaId));
+
+  registrarMetaEvent('webhook_diagnostics', {
+    empresaId,
+    conclusion: resultado.conclusion,
+    failedSteps: failedSteps.map((step) => ({
+      name: step.name,
+      data: step.data,
+    })),
+  });
+
+  return resultado;
 }
 
 app.use(express.static(__dirname));
@@ -1126,6 +1387,7 @@ app.get('/health', (req, res) => {
     publicAppUrl: PUBLIC_APP_URL,
     graphVersion: META_GRAPH_VERSION,
     oauthRedirectUri: OAUTH_REDIRECT_URI,
+    webhookUrl: WEBHOOK_URL,
   });
 });
 
@@ -1328,7 +1590,7 @@ app.get('/api/whatsapp/status', (req, res) => {
       hasWhatsappToken: Boolean(WHATSAPP_TOKEN),
       hasPhoneNumberId: Boolean(WHATSAPP_PHONE_NUMBER_ID),
       callbackUrl: OAUTH_REDIRECT_URI,
-      webhookUrl: `${PUBLIC_APP_URL}/webhook`,
+      webhookUrl: WEBHOOK_URL,
       verifyToken: VERIFY_TOKEN,
     },
   });
@@ -1340,7 +1602,7 @@ app.get('/api/whatsapp/connect-info', (req, res) => {
     appId: META_APP_ID,
     configurationId: META_CONFIGURATION_ID,
     redirectUri: OAUTH_REDIRECT_URI,
-    webhookUrl: `${PUBLIC_APP_URL}/webhook`,
+    webhookUrl: WEBHOOK_URL,
     verifyToken: VERIFY_TOKEN,
     readyForEmbeddedSignup: Boolean(META_APP_ID && META_CONFIGURATION_ID),
   });
@@ -1463,6 +1725,31 @@ app.get('/api/whatsapp/oauth/callback', async (req, res) => {
       empresaId,
     })
   );
+});
+
+app.get('/api/meta/webhook-diagnostics', async (req, res) => {
+  try {
+    const empresaId = normalizarEmpresaId(req.query.empresaId || 'empresa_demo');
+    const diagnostics = await executarWebhookDiagnostics(empresaId);
+
+    res.json(diagnostics);
+  } catch (error) {
+    console.error('Erro em webhook-diagnostics:', error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      details: error.details || null,
+    });
+  }
+});
+
+app.get('/api/meta/events', (req, res) => {
+  res.json({
+    success: true,
+    total: db.metaEvents.length,
+    events: db.metaEvents.slice(0, 100),
+  });
 });
 
 app.post('/api/meta/deauthorize', (req, res) => {
@@ -1600,6 +1887,7 @@ app.listen(PORT, () => {
   console.log(`Servidor ZapLens rodando na porta ${PORT}`);
   console.log(`Painel: http://localhost:${PORT}`);
   console.log(`API: http://localhost:${PORT}/api/conversations`);
-  console.log(`Webhook: ${PUBLIC_APP_URL}/webhook`);
+  console.log(`Webhook: ${WEBHOOK_URL}`);
   console.log(`OAuth callback: ${OAUTH_REDIRECT_URI}`);
+  console.log(`Diagnóstico webhook: ${PUBLIC_APP_URL}/api/meta/webhook-diagnostics`);
 });
