@@ -18,16 +18,19 @@ const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || '';
 const META_APP_ID = process.env.META_APP_ID || '';
 const META_APP_SECRET = process.env.META_APP_SECRET || '';
 const META_CONFIGURATION_ID = process.env.META_CONFIGURATION_ID || '';
+const META_GRAPH_VERSION = process.env.META_GRAPH_VERSION || 'v20.0';
 
 const PUBLIC_APP_URL =
   process.env.PUBLIC_APP_URL || 'https://zaplens-mvp-production.up.railway.app';
+
+const GRAPH_BASE_URL = `https://graph.facebook.com/${META_GRAPH_VERSION}`;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DB_PATH = path.join(__dirname, 'db.json');
 
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 function agoraIso() {
@@ -61,6 +64,12 @@ function extrairTelefoneDoState(valor = '') {
   const telefone = texto.split(':').slice(1).join(':').replace(/\D/g, '');
 
   return telefone || null;
+}
+
+function mascararToken(token = '') {
+  if (!token) return null;
+  if (token.length <= 12) return '***';
+  return `${token.slice(0, 6)}...${token.slice(-6)}`;
 }
 
 function criarDbInicial() {
@@ -152,9 +161,19 @@ function aplicarMigracoes(dbAtual) {
       phone: connection.phone || null,
       code: connection.code || null,
       businessToken: connection.businessToken || null,
+      businessTokenMasked:
+        connection.businessTokenMasked || mascararToken(connection.businessToken),
+      tokenType: connection.tokenType || null,
+      expiresIn: connection.expiresIn || null,
       wabaId: connection.wabaId || null,
       phoneNumberId: connection.phoneNumberId || null,
+      displayPhoneNumber: connection.displayPhoneNumber || null,
+      verifiedName: connection.verifiedName || null,
+      qualityRating: connection.qualityRating || null,
+      subscribedToWebhook: Boolean(connection.subscribedToWebhook),
       rawQuery: connection.rawQuery || {},
+      onboarding: connection.onboarding || {},
+      errors: connection.errors || [],
       createdAt: connection.createdAt || agoraIso(),
       updatedAt: connection.updatedAt || agoraIso(),
       ...connection,
@@ -238,8 +257,352 @@ function registrarMetaEvent(tipo, payload = {}) {
     createdAt: agoraIso(),
   });
 
-  db.metaEvents = db.metaEvents.slice(0, 150);
+  db.metaEvents = db.metaEvents.slice(0, 200);
   salvarDb();
+}
+
+function registrarErroConexao(connection, etapa, error) {
+  if (!connection.errors) connection.errors = [];
+
+  const erro = {
+    etapa,
+    message: error?.message || String(error),
+    details: error?.details || null,
+    createdAt: agoraIso(),
+  };
+
+  connection.errors.unshift(erro);
+  connection.errors = connection.errors.slice(0, 20);
+  connection.updatedAt = agoraIso();
+
+  console.error(`[${etapa}]`, erro);
+}
+
+async function graphGet(pathname, accessToken, params = {}) {
+  const url = new URL(`${GRAPH_BASE_URL}${pathname}`);
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      url.searchParams.set(key, String(value));
+    }
+  });
+
+  const headers = {};
+
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers,
+  });
+
+  const json = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const error = new Error(json?.error?.message || 'Erro na Graph API.');
+    error.details = json;
+    throw error;
+  }
+
+  return json;
+}
+
+async function graphPost(pathname, accessToken, body = {}, params = {}) {
+  const url = new URL(`${GRAPH_BASE_URL}${pathname}`);
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      url.searchParams.set(key, String(value));
+    }
+  });
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: accessToken ? `Bearer ${accessToken}` : '',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  const json = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const error = new Error(json?.error?.message || 'Erro na Graph API.');
+    error.details = json;
+    throw error;
+  }
+
+  return json;
+}
+
+async function trocarCodePorBusinessToken(code) {
+  if (!META_APP_ID || !META_APP_SECRET) {
+    throw new Error('META_APP_ID ou META_APP_SECRET ausente no Railway.');
+  }
+
+  if (!code) {
+    throw new Error('Código OAuth ausente.');
+  }
+
+  return graphGet('/oauth/access_token', null, {
+    client_id: META_APP_ID,
+    client_secret: META_APP_SECRET,
+    code,
+  });
+}
+
+async function debugToken(accessToken) {
+  if (!META_APP_ID || !META_APP_SECRET || !accessToken) return null;
+
+  const appAccessToken = `${META_APP_ID}|${META_APP_SECRET}`;
+
+  return graphGet('/debug_token', null, {
+    input_token: accessToken,
+    access_token: appAccessToken,
+  });
+}
+
+function extrairWabaIdDoDebug(debugPayload) {
+  const scopes = debugPayload?.data?.granular_scopes || [];
+
+  const whatsappScope = scopes.find((item) => {
+    const scope = String(item.scope || '').toLowerCase();
+
+    return (
+      scope.includes('whatsapp_business_management') ||
+      scope.includes('whatsapp_business_messaging')
+    );
+  });
+
+  const targetId = whatsappScope?.target_ids?.[0];
+
+  return targetId || null;
+}
+
+function extrairWabaIdDaQuery(query = {}) {
+  return (
+    query.waba_id ||
+    query.wabaId ||
+    query.whatsapp_business_account_id ||
+    query.business_account_id ||
+    query.whatsappBusinessAccountId ||
+    null
+  );
+}
+
+function extrairPhoneNumberIdDaQuery(query = {}) {
+  return (
+    query.phone_number_id ||
+    query.phoneNumberId ||
+    query.business_phone_number_id ||
+    query.whatsapp_business_phone_number_id ||
+    null
+  );
+}
+
+async function buscarPhoneNumbers(wabaId, accessToken) {
+  if (!wabaId || !accessToken) return [];
+
+  const result = await graphGet(`/${wabaId}/phone_numbers`, accessToken, {
+    fields:
+      'id,display_phone_number,verified_name,quality_rating,code_verification_status,name_status,platform_type',
+  });
+
+  return Array.isArray(result?.data) ? result.data : [];
+}
+
+function escolherPhoneNumber(phoneNumbers = [], telefoneInformado = '') {
+  if (!phoneNumbers.length) return null;
+
+  const telefoneLimpo = String(telefoneInformado || '').replace(/\D/g, '');
+
+  if (telefoneLimpo) {
+    const encontrado = phoneNumbers.find((item) => {
+      const display = String(item.display_phone_number || '').replace(/\D/g, '');
+
+      return display.endsWith(telefoneLimpo) || telefoneLimpo.endsWith(display);
+    });
+
+    if (encontrado) return encontrado;
+  }
+
+  return phoneNumbers[0];
+}
+
+async function inscreverWebhookWaba(wabaId, accessToken) {
+  if (!wabaId || !accessToken) return null;
+
+  return graphPost(`/${wabaId}/subscribed_apps`, accessToken, {});
+}
+
+async function completarConexaoMeta(connection) {
+  if (!connection) throw new Error('Conexão não encontrada.');
+
+  connection.onboarding = {
+    ...(connection.onboarding || {}),
+    etapa2StartedAt: agoraIso(),
+  };
+
+  if (!connection.code) {
+    connection.status = 'callback_without_code';
+    connection.notes =
+      'A Meta retornou para o ZapLens, mas não enviou code. Refaça a conexão.';
+    connection.updatedAt = agoraIso();
+    salvarDb();
+    return connection;
+  }
+
+  try {
+    connection.status = 'exchanging_code';
+    connection.updatedAt = agoraIso();
+    salvarDb();
+
+    const tokenPayload = await trocarCodePorBusinessToken(connection.code);
+
+    connection.businessToken = tokenPayload.access_token || null;
+    connection.businessTokenMasked = mascararToken(connection.businessToken);
+    connection.tokenType = tokenPayload.token_type || null;
+    connection.expiresIn = tokenPayload.expires_in || null;
+    connection.onboarding.tokenPayload = {
+      token_type: tokenPayload.token_type || null,
+      expires_in: tokenPayload.expires_in || null,
+      has_access_token: Boolean(tokenPayload.access_token),
+    };
+
+    if (!connection.businessToken) {
+      throw new Error('A Meta não retornou access_token na troca do code.');
+    }
+
+    connection.status = 'token_received';
+    connection.updatedAt = agoraIso();
+    salvarDb();
+  } catch (error) {
+    registrarErroConexao(connection, 'exchange_code_for_token', error);
+    connection.status = 'token_exchange_failed';
+    connection.notes =
+      'Não conseguimos trocar o code por token. Verifique App ID, App Secret e permissões.';
+    salvarDb();
+    return connection;
+  }
+
+  try {
+    connection.status = 'discovering_assets';
+
+    const queryWabaId = extrairWabaIdDaQuery(connection.rawQuery);
+    const queryPhoneNumberId = extrairPhoneNumberIdDaQuery(connection.rawQuery);
+
+    if (queryWabaId) connection.wabaId = String(queryWabaId);
+    if (queryPhoneNumberId) connection.phoneNumberId = String(queryPhoneNumberId);
+
+    const debugPayload = await debugToken(connection.businessToken);
+    connection.onboarding.debugToken = {
+      app_id: debugPayload?.data?.app_id || null,
+      type: debugPayload?.data?.type || null,
+      is_valid: debugPayload?.data?.is_valid || null,
+      expires_at: debugPayload?.data?.expires_at || null,
+      scopes: debugPayload?.data?.scopes || [],
+      granular_scopes: (debugPayload?.data?.granular_scopes || []).map((item) => ({
+        scope: item.scope,
+        target_ids: item.target_ids || [],
+      })),
+    };
+
+    if (!connection.wabaId) {
+      connection.wabaId = extrairWabaIdDoDebug(debugPayload);
+    }
+
+    if (connection.wabaId && !connection.phoneNumberId) {
+      const phoneNumbers = await buscarPhoneNumbers(
+        connection.wabaId,
+        connection.businessToken
+      );
+
+      connection.onboarding.phoneNumbersFound = phoneNumbers.map((item) => ({
+        id: item.id,
+        display_phone_number: item.display_phone_number,
+        verified_name: item.verified_name,
+        quality_rating: item.quality_rating,
+        code_verification_status: item.code_verification_status,
+        name_status: item.name_status,
+        platform_type: item.platform_type,
+      }));
+
+      const escolhido = escolherPhoneNumber(phoneNumbers, connection.phone);
+
+      if (escolhido) {
+        connection.phoneNumberId = escolhido.id || null;
+        connection.displayPhoneNumber = escolhido.display_phone_number || null;
+        connection.verifiedName = escolhido.verified_name || null;
+        connection.qualityRating = escolhido.quality_rating || null;
+      }
+    }
+
+    connection.status =
+      connection.businessToken && connection.wabaId && connection.phoneNumberId
+        ? 'assets_ready'
+        : 'token_received_assets_pending';
+
+    connection.updatedAt = agoraIso();
+    salvarDb();
+  } catch (error) {
+    registrarErroConexao(connection, 'discover_assets', error);
+    connection.status = 'asset_discovery_failed';
+    connection.notes =
+      'Token recebido, mas não conseguimos localizar WABA/Phone Number ID automaticamente.';
+    salvarDb();
+    return connection;
+  }
+
+  try {
+    if (connection.wabaId && connection.businessToken) {
+      connection.status = 'subscribing_webhook';
+      connection.updatedAt = agoraIso();
+      salvarDb();
+
+      const subscription = await inscreverWebhookWaba(
+        connection.wabaId,
+        connection.businessToken
+      );
+
+      connection.subscribedToWebhook = Boolean(subscription?.success ?? true);
+      connection.onboarding.subscription = subscription || {
+        attempted: true,
+      };
+    }
+
+    connection.status =
+      connection.businessToken && connection.wabaId && connection.phoneNumberId
+        ? 'connected_ready'
+        : 'connected_partial';
+
+    connection.notes =
+      connection.status === 'connected_ready'
+        ? 'Conexão operacional criada. Próximo passo: validar recebimento de mensagens novas pelo webhook.'
+        : 'Conexão parcial criada. Verifique WABA ID e Phone Number ID.';
+
+    connection.updatedAt = agoraIso();
+    salvarDb();
+
+    return connection;
+  } catch (error) {
+    registrarErroConexao(connection, 'subscribe_webhook', error);
+
+    connection.status =
+      connection.businessToken && connection.wabaId && connection.phoneNumberId
+        ? 'connected_without_webhook_subscription'
+        : 'connected_partial';
+
+    connection.notes =
+      'Conseguimos token e ativos, mas a inscrição do webhook falhou. Verifique permissões e configuração do app na Meta.';
+
+    connection.updatedAt = agoraIso();
+    salvarDb();
+
+    return connection;
+  }
 }
 
 function classificarMensagem(texto = '') {
@@ -457,6 +820,14 @@ function buscarConexaoAtiva(empresaId = 'empresa_demo') {
   );
 }
 
+function buscarConexaoPorPhoneNumberId(phoneNumberId) {
+  if (!phoneNumberId) return null;
+
+  return db.whatsappConnections.find(
+    (item) => String(item.phoneNumberId || '') === String(phoneNumberId)
+  );
+}
+
 function salvarConexaoWhatsapp({
   empresaId,
   phone,
@@ -483,9 +854,18 @@ function salvarConexaoWhatsapp({
       phone: telefone,
       code: code || null,
       businessToken: null,
+      businessTokenMasked: null,
+      tokenType: null,
+      expiresIn: null,
       wabaId: null,
       phoneNumberId: null,
+      displayPhoneNumber: null,
+      verifiedName: null,
+      qualityRating: null,
+      subscribedToWebhook: false,
       rawQuery: rawQuery || {},
+      onboarding: {},
+      errors: [],
       createdAt: agoraIso(),
       updatedAt: agoraIso(),
       notes:
@@ -509,21 +889,38 @@ function salvarConexaoWhatsapp({
   return connection;
 }
 
-async function enviarMensagemWhatsApp({ telefone, mensagem }) {
-  const token = WHATSAPP_TOKEN;
-  const phoneNumberId = WHATSAPP_PHONE_NUMBER_ID;
+function obterCredenciaisEnvio(conversa) {
+  const connection = buscarConexaoAtiva(conversa.empresaId);
 
-  if (!token || !phoneNumberId) {
-    console.log(
-      'WhatsApp real ainda não configurado. Mensagem salva localmente.'
-    );
+  if (connection?.businessToken && connection?.phoneNumberId) {
     return {
-      simulated: true,
-      message: 'WhatsApp token/phone_number_id ausente. Envio real ignorado.',
+      token: connection.businessToken,
+      phoneNumberId: connection.phoneNumberId,
+      source: 'embedded_signup',
     };
   }
 
-  const url = `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`;
+  return {
+    token: WHATSAPP_TOKEN,
+    phoneNumberId: WHATSAPP_PHONE_NUMBER_ID,
+    source: 'env',
+  };
+}
+
+async function enviarMensagemWhatsApp({ conversa, telefone, mensagem }) {
+  const { token, phoneNumberId, source } = obterCredenciaisEnvio(conversa);
+
+  if (!token || !phoneNumberId) {
+    console.log('WhatsApp real ainda não configurado. Mensagem salva localmente.');
+
+    return {
+      simulated: true,
+      source,
+      message: 'Token/phone_number_id ausente. Envio real ignorado.',
+    };
+  }
+
+  const url = `${GRAPH_BASE_URL}/${phoneNumberId}/messages`;
 
   const resposta = await fetch(url, {
     method: 'POST',
@@ -541,7 +938,7 @@ async function enviarMensagemWhatsApp({ telefone, mensagem }) {
     }),
   });
 
-  const json = await resposta.json();
+  const json = await resposta.json().catch(() => ({}));
 
   if (!resposta.ok) {
     console.error('Erro ao enviar WhatsApp:', json);
@@ -652,6 +1049,37 @@ function renderOAuthCallbackPage({
   `;
 }
 
+function montarConexaoSegura(connection) {
+  if (!connection) return null;
+
+  return {
+    id: connection.id,
+    empresaId: connection.empresaId,
+    provider: connection.provider,
+    status: connection.status,
+    phone: connection.phone,
+    wabaId: connection.wabaId,
+    phoneNumberId: connection.phoneNumberId,
+    displayPhoneNumber: connection.displayPhoneNumber,
+    verifiedName: connection.verifiedName,
+    qualityRating: connection.qualityRating,
+    subscribedToWebhook: Boolean(connection.subscribedToWebhook),
+    createdAt: connection.createdAt,
+    updatedAt: connection.updatedAt,
+    notes: connection.notes,
+    hasCode: Boolean(connection.code),
+    hasBusinessToken: Boolean(connection.businessToken),
+    businessTokenMasked: connection.businessTokenMasked || mascararToken(connection.businessToken),
+    errors: connection.errors || [],
+    onboarding: {
+      tokenPayload: connection.onboarding?.tokenPayload || null,
+      debugToken: connection.onboarding?.debugToken || null,
+      phoneNumbersFound: connection.onboarding?.phoneNumbersFound || [],
+      subscription: connection.onboarding?.subscription || null,
+    },
+  };
+}
+
 app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
@@ -665,6 +1093,7 @@ app.get('/health', (req, res) => {
     port: PORT,
     db: fs.existsSync(DB_PATH),
     publicAppUrl: PUBLIC_APP_URL,
+    graphVersion: META_GRAPH_VERSION,
   });
 });
 
@@ -726,6 +1155,7 @@ app.post('/api/send-message', async (req, res) => {
     }
 
     const envio = await enviarMensagemWhatsApp({
+      conversa,
       telefone: conversa.phone,
       mensagem: message,
     });
@@ -856,23 +1286,10 @@ app.get('/api/whatsapp/status', (req, res) => {
     success: true,
     empresaId,
     connected: Boolean(connection),
-    connection: connection
-      ? {
-          id: connection.id,
-          empresaId: connection.empresaId,
-          provider: connection.provider,
-          status: connection.status,
-          phone: connection.phone,
-          wabaId: connection.wabaId,
-          phoneNumberId: connection.phoneNumberId,
-          createdAt: connection.createdAt,
-          updatedAt: connection.updatedAt,
-          notes: connection.notes,
-          hasCode: Boolean(connection.code),
-          hasBusinessToken: Boolean(connection.businessToken),
-        }
-      : null,
+    ready: connection?.status === 'connected_ready',
+    connection: montarConexaoSegura(connection),
     meta: {
+      graphVersion: META_GRAPH_VERSION,
       hasAppId: Boolean(META_APP_ID),
       hasAppSecret: Boolean(META_APP_SECRET),
       hasConfigurationId: Boolean(META_CONFIGURATION_ID),
@@ -911,20 +1328,7 @@ app.get('/api/whatsapp/connections', (req, res) => {
   res.json({
     success: true,
     total: connections.length,
-    connections: connections.map((connection) => ({
-      id: connection.id,
-      empresaId: connection.empresaId,
-      provider: connection.provider,
-      status: connection.status,
-      phone: connection.phone,
-      wabaId: connection.wabaId,
-      phoneNumberId: connection.phoneNumberId,
-      createdAt: connection.createdAt,
-      updatedAt: connection.updatedAt,
-      hasCode: Boolean(connection.code),
-      hasBusinessToken: Boolean(connection.businessToken),
-      notes: connection.notes,
-    })),
+    connections: connections.map(montarConexaoSegura),
   });
 });
 
@@ -938,7 +1342,8 @@ app.post('/api/whatsapp/disconnect', (req, res) => {
       ...connection,
       status: 'revoked',
       updatedAt: agoraIso(),
-      notes: 'Conexão desconectada pelo ZapLens.',
+      notes:
+        'Conexão desconectada pelo ZapLens. Permissões na Meta podem continuar ativas até revogação pelo usuário.',
     };
   });
 
@@ -949,6 +1354,34 @@ app.post('/api/whatsapp/disconnect', (req, res) => {
     message: 'WhatsApp desconectado.',
     empresaId,
   });
+});
+
+app.post('/api/whatsapp/complete-connection', async (req, res) => {
+  try {
+    const empresaId = normalizarEmpresaId(req.body?.empresaId || 'empresa_demo');
+    const connection = buscarConexaoAtiva(empresaId);
+
+    if (!connection) {
+      return res.status(404).json({
+        success: false,
+        error: 'Conexão não encontrada.',
+      });
+    }
+
+    const updated = await completarConexaoMeta(connection);
+
+    res.json({
+      success: true,
+      connection: montarConexaoSegura(updated),
+    });
+  } catch (error) {
+    console.error('Erro em complete-connection:', error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
 });
 
 app.get('/api/whatsapp/oauth/callback', async (req, res) => {
@@ -976,7 +1409,7 @@ app.get('/api/whatsapp/oauth/callback', async (req, res) => {
     );
   }
 
-  const connection = salvarConexaoWhatsapp({
+  let connection = salvarConexaoWhatsapp({
     empresaId,
     phone,
     code: code || null,
@@ -984,12 +1417,16 @@ app.get('/api/whatsapp/oauth/callback', async (req, res) => {
     rawQuery: req.query,
   });
 
+  connection = await completarConexaoMeta(connection);
+
   return res.send(
     renderOAuthCallbackPage({
       ok: true,
       title: 'WhatsApp recebido pelo ZapLens',
       message:
-        'A autorização chegou ao ZapLens. Agora estamos preparando a conexão completa para mensagens e histórico.',
+        connection.status === 'connected_ready'
+          ? 'Conexão operacional concluída. Agora vamos validar o recebimento de mensagens novas.'
+          : 'A autorização chegou ao ZapLens, mas ainda precisamos concluir alguns dados da conexão.',
       status: connection.status,
       empresaId,
     })
@@ -1084,8 +1521,15 @@ app.post('/webhook', (req, res) => {
     const entry = req.body.entry?.[0];
     const changes = entry?.changes?.[0];
     const value = changes?.value;
+    const metadata = value?.metadata;
     const message = value?.messages?.[0];
     const contact = value?.contacts?.[0];
+
+    const phoneNumberId = metadata?.phone_number_id || null;
+    const connection =
+      buscarConexaoPorPhoneNumberId(phoneNumberId) || buscarConexaoAtiva('empresa_demo');
+
+    const empresaId = connection?.empresaId || 'empresa_demo';
 
     if (message && message.type === 'text') {
       const texto = message.text.body;
@@ -1093,7 +1537,7 @@ app.post('/webhook', (req, res) => {
       const nome = contact?.profile?.name || `Cliente ${telefone}`;
 
       criarOuAtualizarConversa({
-        empresaId: 'empresa_demo',
+        empresaId,
         nome,
         telefone,
         texto,
@@ -1105,7 +1549,7 @@ app.post('/webhook', (req, res) => {
       const nome = contact?.profile?.name || `Cliente ${telefone}`;
 
       criarOuAtualizarConversa({
-        empresaId: 'empresa_demo',
+        empresaId,
         nome,
         telefone,
         texto:
