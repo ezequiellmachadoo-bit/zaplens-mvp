@@ -1239,6 +1239,478 @@
         color: #334155;
       }
 
+    
+      .wa-connect-card {
+        margin: 16px 0;
+        border: 1px solid rgba(20, 184, 166, 0.24);
+        background: linear-gradient(135deg, rgba(230, 255, 251, 0.95), #ffffff);
+        border-radius: 18px;
+        padding: 16px;
+        box-shadow: 0 12px 34px rgba(15, 23, 42, 0.07);
+      }
+      .wa-connect-card.compact { padding: 12px; margin: 12px 0 0; }
+      .wa-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+      .wa-title-row h3 { font-size: 16px; margin: 0 0 4px; letter-spacing: -0.2px; color: var(--navy); }
+      .wa-title-row p { font-size: 12px; color: var(--muted); line-height: 1.45; margin: 0; }
+      .wa-status-pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 6px 10px; font-size: 11px; font-weight: 900; white-space: nowrap; }
+      .wa-status-pill.disconnected { background: var(--yellowbg); color: var(--yellow); }
+      .wa-status-pill.connected { background: var(--greenbg); color: var(--green); }
+      .wa-status-dot { width: 7px; height: 7px; border-radius: 999px; background: currentColor; }
+      .wa-phone-field { margin: 12px 0; }
+      .wa-phone-field label { display: block; font-size: 12px; font-weight: 900; color: var(--ink); margin-bottom: 7px; }
+      .wa-phone-field input { width: 100%; border: 1px solid var(--line); border-radius: 13px; padding: 12px; outline: none; background: #fff; font-size: 14px; }
+      .wa-phone-field input:focus { border-color: var(--teal2); box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.12); }
+      .wa-benefits { display: grid; gap: 7px; margin: 12px 0; color: #334155; font-size: 12px; line-height: 1.35; }
+      .wa-benefits span { display: flex; gap: 7px; align-items: flex-start; }
+      .wa-actions { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 12px; }
+      .wa-helper { margin-top: 9px; font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+    
+      /* ===== ZapLens SaaS real: login demo, onboarding simples e mobile ===== */
+      .demo-video-panel {
+        position: relative;
+        border-radius: 24px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.16);
+        background: rgba(255,255,255,0.07);
+        box-shadow: 0 26px 80px rgba(0,0,0,0.25);
+        min-height: 430px;
+        padding: 20px;
+      }
+
+      .demo-video-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: #dbeafe;
+        font-size: 12px;
+        font-weight: 850;
+        margin-bottom: 14px;
+      }
+
+      .demo-dots {
+        display: flex;
+        gap: 6px;
+      }
+
+      .demo-dots span {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.35);
+      }
+
+      .demo-frame {
+        background: #f8fafc;
+        border-radius: 20px;
+        overflow: hidden;
+        min-height: 355px;
+        display: grid;
+        grid-template-columns: 145px 1fr;
+      }
+
+      .demo-sidebar {
+        background: #071a2f;
+        color: #cbd5e1;
+        padding: 14px;
+        display: grid;
+        gap: 9px;
+        align-content: start;
+      }
+
+      .demo-side-item {
+        border-radius: 12px;
+        padding: 9px;
+        background: rgba(255,255,255,0.08);
+        font-size: 11px;
+        font-weight: 850;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .demo-side-item.active {
+        background: rgba(20,184,166,0.28);
+        color: #fff;
+      }
+
+      .demo-content {
+        padding: 16px;
+        display: grid;
+        gap: 12px;
+        align-content: start;
+        color: #0f172a;
+      }
+
+      .demo-card-mini {
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        border-radius: 16px;
+        padding: 12px;
+        box-shadow: 0 10px 24px rgba(15,23,42,0.06);
+        animation: demoFloat 5s ease-in-out infinite;
+      }
+
+      .demo-card-mini:nth-child(2) { animation-delay: .7s; }
+      .demo-card-mini:nth-child(3) { animation-delay: 1.4s; }
+
+      @keyframes demoFloat {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+      }
+
+      .demo-card-mini strong {
+        display: block;
+        font-size: 13px;
+        margin-bottom: 6px;
+      }
+
+      .demo-card-mini p {
+        font-size: 11.5px;
+        color: #64748b;
+        line-height: 1.45;
+        margin: 0;
+      }
+
+      .demo-pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .onboarding-steps {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin: 16px 0 18px;
+      }
+
+      .onboarding-step {
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 14px;
+        padding: 10px;
+      }
+
+      .onboarding-step strong {
+        display: block;
+        color: var(--teal);
+        font-size: 12px;
+        margin-bottom: 4px;
+      }
+
+      .onboarding-step span {
+        color: var(--muted);
+        font-size: 11.5px;
+        line-height: 1.35;
+      }
+
+      .wa-connect-card {
+        margin: 16px 0;
+        border: 1px solid rgba(20, 184, 166, 0.24);
+        background: linear-gradient(135deg, rgba(230, 255, 251, 0.95), #ffffff);
+        border-radius: 18px;
+        padding: 16px;
+        box-shadow: 0 12px 34px rgba(15, 23, 42, 0.07);
+      }
+
+      .wa-connect-card.compact {
+        padding: 12px;
+        margin: 12px 0 0;
+      }
+
+      .wa-title-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .wa-title-row h3 {
+        font-size: 16px;
+        margin: 0 0 4px;
+        letter-spacing: -0.2px;
+        color: var(--navy);
+      }
+
+      .wa-title-row p {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.45;
+        margin: 0;
+      }
+
+      .wa-status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 11px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .wa-status-pill.disconnected {
+        background: var(--yellowbg);
+        color: var(--yellow);
+      }
+
+      .wa-status-pill.connected {
+        background: var(--greenbg);
+        color: var(--green);
+      }
+
+      .wa-status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: currentColor;
+      }
+
+      .wa-phone-field {
+        margin: 12px 0;
+      }
+
+      .wa-phone-field label {
+        display: block;
+        font-size: 12px;
+        font-weight: 900;
+        color: var(--ink);
+        margin-bottom: 7px;
+      }
+
+      .wa-phone-field input {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        padding: 12px;
+        outline: none;
+        background: #fff;
+        font-size: 14px;
+      }
+
+      .wa-phone-field input:focus {
+        border-color: var(--teal2);
+        box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.12);
+      }
+
+      .wa-benefits {
+        display: grid;
+        gap: 7px;
+        margin: 12px 0;
+        color: #334155;
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .wa-benefits span {
+        display: flex;
+        gap: 7px;
+        align-items: flex-start;
+      }
+
+      .wa-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .wa-helper {
+        margin-top: 9px;
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 1.4;
+      }
+
+      .connect-loading {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(8px);
+        z-index: 90;
+        padding: 24px;
+      }
+
+      .connect-loading.active {
+        display: flex;
+      }
+
+      .connect-loading-card {
+        width: min(440px, 92vw);
+        background: #fff;
+        border-radius: 22px;
+        padding: 26px;
+        box-shadow: 0 30px 90px rgba(15,23,42,.25);
+        text-align: center;
+      }
+
+      .connect-loader {
+        width: 46px;
+        height: 46px;
+        margin: 0 auto 16px;
+        border-radius: 999px;
+        border: 4px solid #ccfbf1;
+        border-top-color: var(--teal);
+        animation: spin .9s linear infinite;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      .connect-loading-card h3 {
+        margin: 0 0 8px;
+        color: var(--navy);
+        letter-spacing: -.4px;
+      }
+
+      .connect-loading-card p {
+        color: var(--muted);
+        line-height: 1.5;
+        margin: 0;
+      }
+
+      .mobile-nav {
+        display: none;
+      }
+
+      @media (max-width: 900px) {
+        body {
+          overflow: auto;
+        }
+
+        .login {
+          display: block;
+          min-height: 100vh;
+        }
+
+        .login-hero {
+          display: block;
+          padding: 22px;
+          min-height: auto;
+        }
+
+        .hero-copy h1 {
+          font-size: 34px;
+          letter-spacing: -1.3px;
+        }
+
+        .hero-copy p {
+          font-size: 15px;
+        }
+
+        .proof-grid {
+          grid-template-columns: 1fr;
+          margin-top: 20px;
+        }
+
+        .demo-video-panel {
+          margin-top: 22px;
+          min-height: auto;
+        }
+
+        .demo-frame {
+          grid-template-columns: 1fr;
+        }
+
+        .demo-sidebar {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .login-panel {
+          padding: 24px;
+          min-height: auto;
+        }
+
+        .setup-page {
+          padding: 16px;
+        }
+
+        .setup-card {
+          padding: 22px;
+        }
+
+        .onboarding-steps {
+          grid-template-columns: 1fr;
+        }
+
+        .app {
+          display: block;
+          height: 100vh;
+          overflow: hidden;
+        }
+
+        .main-menu,
+        .inbox,
+        .conversation,
+        .sidepanel {
+          display: none;
+          height: calc(100vh - 64px);
+        }
+
+        .main-menu.mobile-active,
+        .inbox.mobile-active,
+        .conversation.mobile-active,
+        .sidepanel.mobile-active {
+          display: flex;
+        }
+
+        .main-menu.mobile-active {
+          width: 100%;
+        }
+
+        .conversation.mobile-active {
+          height: calc(100vh - 64px);
+        }
+
+        .sidepanel.mobile-active {
+          display: flex;
+        }
+
+        .mobile-nav {
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          height: 64px;
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          background: #fff;
+          border-top: 1px solid var(--line);
+          z-index: 70;
+        }
+
+        .mobile-nav button {
+          border: 0;
+          background: #fff;
+          color: var(--muted);
+          font-size: 11px;
+          font-weight: 900;
+          display: grid;
+          place-items: center;
+          gap: 2px;
+        }
+
+        .mobile-nav button.active {
+          color: var(--teal);
+          background: var(--tealbg);
+        }
+
+        .bubble {
+          max-width: 88%;
+        }
+
+        .conv-actions {
+          display: none;
+        }
+      }
+
     </style>
   </head>
 
@@ -1249,31 +1721,64 @@
           <div class="brand">
             <span class="brand-mark">ZL</span>Zap<span>Lens</span>
           </div>
+
           <div class="hero-copy">
-            <div class="eyebrow">
-              Central inteligente de conversas e acompanhamentos
-            </div>
-            <h1>Enxergue o que importa nas conversas da sua empresa.</h1>
+            <div class="eyebrow">Central inteligente para WhatsApp Business</div>
+            <h1>O WhatsApp mostra mensagens. O ZapLens mostra o que precisa ser resolvido.</h1>
             <p>
-              O WhatsApp mostra mensagens. O ZapLens mostra o que precisa ser
-              resolvido: respostas, retornos, cobranças, documentos, orçamentos,
-              agendamentos e fechamentos.
+              Organize atendimento, vendas, cobranças, documentos, áudios e retornos em uma central simples,
+              visual e preparada para operação real.
             </p>
-            <div class="proof-grid">
-              <div class="proof">
-                <strong>12</strong><span>conversas precisam de resposta</span>
+          </div>
+
+          <div class="demo-video-panel" aria-label="Demonstração visual do ZapLens">
+            <div class="demo-video-top">
+              <span>Prévia da plataforma em funcionamento</span>
+              <div class="demo-dots"><span></span><span></span><span></span></div>
+            </div>
+
+            <div class="demo-frame">
+              <div class="demo-sidebar">
+                <div class="demo-side-item active">Hoje <span>12</span></div>
+                <div class="demo-side-item">Orçamentos <span>5</span></div>
+                <div class="demo-side-item">Cobranças <span>3</span></div>
+                <div class="demo-side-item">Áudios <span>7</span></div>
+                <div class="demo-side-item">Fechamentos <span>2</span></div>
               </div>
-              <div class="proof">
-                <strong>R$ 18.450</strong><span>em orçamentos em aberto</span>
-              </div>
-              <div class="proof">
-                <strong>7</strong><span>retornos prometidos hoje</span>
+
+              <div class="demo-content">
+                <div class="demo-card-mini">
+                  <strong>Nova mensagem classificada</strong>
+                  <p>“Quanto fica para instalar amanhã?” virou Orçamento com prioridade alta.</p>
+                  <div class="demo-pill-row">
+                    <span class="badge red">Orçamento</span>
+                    <span class="badge yellow">Responder agora</span>
+                  </div>
+                </div>
+
+                <div class="demo-card-mini">
+                  <strong>Áudio entendido automaticamente</strong>
+                  <p>Transcrição pronta, categoria definida e sugestão de resposta criada.</p>
+                  <div class="demo-pill-row">
+                    <span class="badge blue">Áudio</span>
+                    <span class="badge green">Sugestão pronta</span>
+                  </div>
+                </div>
+
+                <div class="demo-card-mini">
+                  <strong>Próxima ação clara</strong>
+                  <p>O painel mostra quem responder, quem cobrar, quem acompanhar e o que pode virar venda.</p>
+                  <div class="demo-pill-row">
+                    <span class="badge green">Follow-up</span>
+                    <span class="badge blue">R$ parado</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+
           <div style="color: #94a3b8; font-size: 13px; font-weight: 750">
-            Entre duas vezes por dia e saiba exatamente quem responder, cobrar,
-            acompanhar e concluir.
+            Uma plataforma para pequenos e médios negócios que vendem e atendem pelo WhatsApp.
           </div>
         </div>
 
@@ -1324,11 +1829,26 @@
           <div class="brand">
             <span class="brand-mark">ZL</span>Zap<span>Lens</span>
           </div>
-          <h1>Configure sua operação</h1>
+          <h1>Conecte sua operação</h1>
           <p>
-            Escolha o perfil do seu negócio para o ZapLens organizar conversas,
-            acompanhamentos e resultados.
+            Informe os dados da empresa e conecte o WhatsApp Business para começar a organizar conversas, prioridades e oportunidades.
           </p>
+
+          <div class="onboarding-steps">
+            <div class="onboarding-step">
+              <strong>1. Empresa</strong>
+              <span>Identifique a operação que será organizada.</span>
+            </div>
+            <div class="onboarding-step">
+              <strong>2. WhatsApp</strong>
+              <span>Informe o número comercial com DDD.</span>
+            </div>
+            <div class="onboarding-step">
+              <strong>3. Meta</strong>
+              <span>Autorize a conexão com segurança.</span>
+            </div>
+          </div>
+
           <div class="field">
             <label>Nome da empresa</label>
             <input id="companyInput" value="Operação Principal" />
@@ -1356,35 +1876,39 @@
               <option>Mais de 15 pessoas</option>
             </select>
           </div>
-          <button id="setupBtn" class="btn btn-primary btn-full" type="button">
-            Acessar central
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <section id="appScreen" class="screen">
-      <div class="app">
-        <aside class="main-menu">
-          <div class="menu-top">
-            <div class="menu-brand">
-              <span class="brand-mark">ZL</span>
-              <div>
-                <strong>Zap<span>Lens</span></strong>
-              </div>
-            </div>
-            <p class="menu-caption">
-              Responder, acompanhar, cobrar e fechar sem perder conversas.
-            </p>
+<p class="wa-helper">Você será direcionado para a Meta para autorizar a conexão com segurança.</p>
           </div>
 
-          <div class="menu-scroll" id="mainMenu"></div>
+          </div>
+</div>
 
-          <div class="menu-bottom">
-            <div class="company-box">
-              <strong id="companyNameBox">Operação Principal</strong>
-              <span>Operação conectada ao WhatsApp</span>
             </div>
+
+
+            <div class="wa-connect-card compact">
+              <div class="wa-title-row" style="margin-bottom:8px;">
+                <div>
+                  <h3 style="font-size:13px;">WhatsApp Business</h3>
+                  <p id="waSidebarText">Conecte para receber e organizar conversas reais.</p>
+                </div>
+                <span id="waStatusPill" class="wa-status-pill disconnected">
+                  <span class="wa-status-dot"></span>
+                  Não conectado
+                </span>
+              </div>
+
+              <div class="wa-phone-field" style="margin:8px 0;">
+                <label>Número da operação</label>
+                <input id="businessWhatsAppInputSidebar" placeholder="Ex: 48991990531" inputmode="tel" />
+              </div>
+
+              <div class="wa-actions">
+                <button id="connectWhatsAppBtn" class="btn btn-primary btn-full" type="button">
+                  Conectar WhatsApp
+                </button>
+              </div>
+            </div>
+
             <button
               id="resetBtn"
               class="btn btn-secondary btn-full"
@@ -1599,6 +2123,14 @@
       </div>
     </section>
 
+
+    <nav class="mobile-nav" id="mobileNav">
+      <button type="button" class="active" data-mobile-section="inbox">Conversas</button>
+      <button type="button" data-mobile-section="conversation">Chat</button>
+      <button type="button" data-mobile-section="sidepanel">Ações</button>
+      <button type="button" data-mobile-section="main-menu">Menu</button>
+    </nav>
+
     <div class="page-modal" id="modal">
       <div class="modal-card">
         <div class="modal-head">
@@ -1611,6 +2143,15 @@
           </button>
         </div>
         <div class="modal-body" id="modalBody"></div>
+      </div>
+    </div>
+
+
+    <div id="connectLoading" class="connect-loading">
+      <div class="connect-loading-card">
+        <div class="connect-loader"></div>
+        <h3>Conectando sua operação...</h3>
+        <p>Vamos abrir a autorização segura da Meta e, em seguida, carregar suas conversas no ZapLens.</p>
       </div>
     </div>
 
@@ -1801,10 +2342,27 @@
 
       function abrirPainel() {
         companyName = document.getElementById("companyInput")?.value || companyName || "Operação Principal";
+
+        const savedBusinessWhatsApp = localStorage.getItem("zaplens_business_whatsapp") || "";
+        const setupPhone = document.getElementById("businessWhatsAppInput");
+        const sidebarPhone = document.getElementById("businessWhatsAppInputSidebar");
+
+        if (setupPhone) setupPhone.value = savedBusinessWhatsApp;
+        if (sidebarPhone) sidebarPhone.value = savedBusinessWhatsApp;
+
+        setupPhone?.addEventListener("input", () => {
+          if (sidebarPhone) sidebarPhone.value = setupPhone.value;
+        });
+
+        sidebarPhone?.addEventListener("input", () => {
+          if (setupPhone) setupPhone.value = sidebarPhone.value;
+        });
+
         const companyBox = document.getElementById("companyNameBox");
         if (companyBox) companyBox.textContent = companyName;
 
         switchScreen("appScreen");
+        setMobileSection("inbox");
         renderMenu();
         renderChatList();
         renderConversation();
@@ -2339,81 +2897,93 @@
       }
 
 
+
+
+
       async function carregarStatusWhatsApp() {
         try {
           const statusData = await apiGet("/api/whatsapp/status");
           const connectInfo = await apiGet("/api/whatsapp/connect-info");
-
           whatsappStatus = statusData;
           whatsappConnectInfo = connectInfo;
-
           renderWhatsAppStatus();
         } catch (error) {
           console.error("Erro ao carregar status do WhatsApp:", error);
-          renderWhatsAppStatus({
-            error: "Não foi possível carregar o status da conexão.",
-          });
+          renderWhatsAppStatus();
         }
       }
 
-      function renderWhatsAppStatus(options = {}) {
-        const pill = document.getElementById("waStatusPill");
-        const webhook = document.getElementById("waWebhookUrl");
-        const verify = document.getElementById("waVerifyToken");
-        const button = document.getElementById("connectWhatsAppBtn");
-
-        if (!pill || !webhook || !verify || !button) return;
-
-        const connected = Boolean(whatsappStatus?.connected);
-        const readyForEmbeddedSignup = Boolean(whatsappConnectInfo?.readyForEmbeddedSignup);
-
-        pill.classList.toggle("connected", connected);
-        pill.classList.toggle("disconnected", !connected);
-        pill.innerHTML = connected
+      function setStatusPill(element, connected) {
+        if (!element) return;
+        element.classList.toggle("connected", connected);
+        element.classList.toggle("disconnected", !connected);
+        element.innerHTML = connected
           ? '<span class="wa-status-dot"></span>Conectado'
           : '<span class="wa-status-dot"></span>Não conectado';
+      }
 
-        webhook.textContent =
-          whatsappStatus?.meta?.webhookUrl ||
-          whatsappConnectInfo?.webhookUrl ||
-          "Webhook não carregado";
+      function renderWhatsAppStatus() {
+        const connected = Boolean(whatsappStatus?.connected);
+        const readyForEmbeddedSignup = Boolean(whatsappConnectInfo?.readyForEmbeddedSignup);
+        const pill = document.getElementById("waStatusPill");
+        const pillSetup = document.getElementById("waStatusPillSetup");
+        const button = document.getElementById("connectWhatsAppBtn");
+        const setupButton = document.getElementById("setupConnectWhatsAppBtn");
+        const sidebarText = document.getElementById("waSidebarText");
 
-        verify.textContent =
-          whatsappStatus?.meta?.verifyToken ||
-          whatsappConnectInfo?.verifyToken ||
-          "Token não carregado";
+        setStatusPill(pill, connected);
+        setStatusPill(pillSetup, connected);
 
-        if (connected) {
-          button.textContent = "WhatsApp conectado";
-          button.disabled = true;
-          button.classList.add("btn-secondary");
-          button.classList.remove("btn-primary");
-          return;
+        if (sidebarText) {
+          sidebarText.textContent = connected
+            ? "WhatsApp conectado e pronto para operação."
+            : "Conecte para receber e organizar conversas reais.";
         }
 
-        button.disabled = !readyForEmbeddedSignup;
-        button.textContent = readyForEmbeddedSignup
-          ? "Conectar WhatsApp"
-          : "Configuração Meta pendente";
+        [button, setupButton].forEach((btn) => {
+          if (!btn) return;
 
-        button.classList.toggle("btn-primary", readyForEmbeddedSignup);
-        button.classList.toggle("btn-secondary", !readyForEmbeddedSignup);
+          if (connected) {
+            btn.textContent = "WhatsApp conectado";
+            btn.disabled = true;
+            btn.classList.add("btn-secondary");
+            btn.classList.remove("btn-primary");
+            return;
+          }
 
-        if (options.error) {
-          webhook.textContent = options.error;
-        }
+          btn.disabled = !readyForEmbeddedSignup;
+          btn.textContent = readyForEmbeddedSignup
+            ? (btn.id === "setupConnectWhatsAppBtn" ? "Conectar WhatsApp agora" : "Conectar WhatsApp")
+            : "Configuração Meta pendente";
+
+          btn.classList.toggle("btn-primary", readyForEmbeddedSignup);
+          btn.classList.toggle("btn-secondary", !readyForEmbeddedSignup);
+        });
       }
 
       function conectarWhatsApp() {
         if (!whatsappConnectInfo?.readyForEmbeddedSignup) {
-          alert("A configuração da Meta ainda não está completa. Confira META_APP_ID e META_CONFIGURATION_ID no Railway.");
+          alert("A conexão com a Meta ainda não está pronta. Verifique as configurações do ZapLens.");
           return;
         }
+
+        const setupPhoneInput = document.getElementById("businessWhatsAppInput");
+        const sidebarPhoneInput = document.getElementById("businessWhatsAppInputSidebar");
+        const phone = (setupPhoneInput?.value || sidebarPhoneInput?.value || "").replace(/\D/g, "");
+
+        if (!phone || phone.length < 10) {
+          alert("Digite o número do WhatsApp da empresa com DDD antes de conectar.");
+          setupPhoneInput?.focus();
+          sidebarPhoneInput?.focus();
+          return;
+        }
+
+        localStorage.setItem("zaplens_business_whatsapp", phone);
 
         const appId = whatsappConnectInfo.appId;
         const configurationId = whatsappConnectInfo.configurationId;
         const redirectUri = encodeURIComponent(whatsappConnectInfo.redirectUri);
-        const state = encodeURIComponent("empresa_demo");
+        const state = encodeURIComponent(`empresa_demo:${phone}`);
 
         const extras = encodeURIComponent(
           JSON.stringify({
@@ -2432,7 +3002,46 @@
           `&scope=whatsapp_business_management,whatsapp_business_messaging` +
           `&extras=${extras}`;
 
-        window.location.href = url;
+        const loading = document.getElementById("connectLoading");
+        loading?.classList.add("active");
+
+        const width = 760;
+        const height = 760;
+        const left = Math.max(0, window.screenX + (window.outerWidth - width) / 2);
+        const top = Math.max(0, window.screenY + (window.outerHeight - height) / 2);
+
+        const popup = window.open(
+          url,
+          "zaplens_meta_connect",
+          `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+        );
+
+        if (!popup) {
+          loading?.classList.remove("active");
+          alert("O navegador bloqueou a janela de autorização. Libere pop-ups para o ZapLens e tente novamente.");
+          return;
+        }
+
+        const checkPopup = setInterval(async () => {
+          if (popup.closed) {
+            clearInterval(checkPopup);
+            loading?.classList.remove("active");
+            await carregarStatusWhatsApp();
+            abrirPainel();
+          }
+        }, 1200);
+      }
+
+      function setMobileSection(sectionClass) {
+        const sections = ["main-menu", "inbox", "conversation", "sidepanel"];
+
+        sections.forEach((className) => {
+          document.querySelector(`.${className}`)?.classList.toggle("mobile-active", className === sectionClass);
+        });
+
+        document.querySelectorAll("#mobileNav button").forEach((button) => {
+          button.classList.toggle("active", button.dataset.mobileSection === sectionClass);
+        });
       }
 
 
@@ -2442,12 +3051,30 @@
         renderChatList();
         renderConversation();
 
+
+        const savedBusinessWhatsApp = localStorage.getItem("zaplens_business_whatsapp") || "";
+        const setupPhone = document.getElementById("businessWhatsAppInput");
+        const sidebarPhone = document.getElementById("businessWhatsAppInputSidebar");
+
+        if (setupPhone) setupPhone.value = savedBusinessWhatsApp;
+        if (sidebarPhone) sidebarPhone.value = savedBusinessWhatsApp;
+
+        setupPhone?.addEventListener("input", () => {
+          if (sidebarPhone) sidebarPhone.value = setupPhone.value;
+        });
+
+        sidebarPhone?.addEventListener("input", () => {
+          if (setupPhone) setupPhone.value = sidebarPhone.value;
+        });
+
         const companyBox = document.getElementById("companyNameBox");
         if (companyBox) companyBox.textContent = companyName;
 
         document.getElementById("loginBtn")?.addEventListener("click", () => switchScreen("setupScreen"));
         document.getElementById("demoBtn")?.addEventListener("click", abrirPainel);
         document.getElementById("setupBtn")?.addEventListener("click", abrirPainel);
+        document.getElementById("setupSkipBtn")?.addEventListener("click", abrirPainel);
+        document.getElementById("setupConnectWhatsAppBtn")?.addEventListener("click", conectarWhatsApp);
 
         document.getElementById("logoutBtn")?.addEventListener("click", () => switchScreen("loginScreen"));
         document.getElementById("resetBtn")?.addEventListener("click", resetData);
@@ -2507,6 +3134,10 @@
 
         document.getElementById("searchInput")?.addEventListener("input", renderChatList);
         document.getElementById("closeModalBtn")?.addEventListener("click", closeModal);
+        document.querySelectorAll("#mobileNav button").forEach((button) => {
+          button.addEventListener("click", () => setMobileSection(button.dataset.mobileSection));
+        });
+
         document.getElementById("modal")?.addEventListener("click", (event) => {
           if (event.target.id === "modal") closeModal();
         });
