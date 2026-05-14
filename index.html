@@ -1089,6 +1089,7 @@
         border-color: #bbf7d0;
       }
 
+
       .new-message-btn {
         margin-top: 12px;
         width: 100%;
@@ -1177,6 +1178,67 @@
           grid-template-columns: 1fr 1fr;
         }
       }
+    
+      .wa-connect-card {
+        margin: 14px 0 0;
+        border: 1px solid rgba(20, 184, 166, 0.25);
+        background: linear-gradient(135deg, rgba(230, 255, 251, 0.9), #ffffff);
+        border-radius: 16px;
+        padding: 14px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+      }
+      .wa-connect-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .wa-status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 5px 9px;
+        font-size: 11px;
+        font-weight: 900;
+      }
+      .wa-status-pill.disconnected {
+        background: var(--yellowbg);
+        color: var(--yellow);
+      }
+      .wa-status-pill.connected {
+        background: var(--greenbg);
+        color: var(--green);
+      }
+      .wa-status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: currentColor;
+      }
+      .wa-connect-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .wa-tech-details {
+        margin-top: 10px;
+        display: grid;
+        gap: 6px;
+        font-size: 11px;
+        color: var(--muted);
+        word-break: break-all;
+      }
+      .wa-tech-details code {
+        display: block;
+        background: #f8fafc;
+        border: 1px solid var(--line);
+        padding: 7px;
+        border-radius: 9px;
+        color: #334155;
+      }
+
     </style>
   </head>
 
@@ -1249,8 +1311,7 @@
               Acessar painel
             </button>
             <p class="mini">
-              Central operacional para acompanhar conversas, retornos e
-              resultados.
+              Central operacional para acompanhar conversas, retornos e resultados.
             </p>
           </div>
         </div>
@@ -1356,11 +1417,7 @@
                 placeholder="Buscar cliente, assunto ou valor..."
               />
             </div>
-            <button
-              id="newMessageBtn"
-              class="btn btn-primary new-message-btn"
-              type="button"
-            >
+            <button id="newMessageBtn" class="btn btn-primary new-message-btn" type="button">
               + Nova conversa recebida
             </button>
             <div class="new-message-hint">
@@ -1558,136 +1615,86 @@
     </div>
 
     <script>
-      const API_BASE = '';
+      const API_BASE = "";
 
       const state = {
-        currentView: 'today',
-        currentFilter: 'Todos',
+        currentView: "today",
+        currentFilter: "Todos",
         currentChat: 0,
       };
 
       let chats = [];
       let fechamentos = [];
-      let companyName = 'Operação Principal';
+      let companyName = "Operação Principal";
       let backendLoaded = false;
+      let whatsappConnectInfo = null;
+      let whatsappStatus = null;
 
       const menuGroups = [
         {
-          title: 'Rotina do dia',
+          title: "Rotina do dia",
           items: [
-            ['today', '⌁', 'Hoje', 'O que resolver agora'],
-            ['conversas', '◌', 'Conversas', 'Inbox por categoria'],
-            [
-              'acompanhamentos',
-              '↻',
-              'Acompanhamentos',
-              'Retornos e pendências',
-            ],
+            ["today", "⌁", "Hoje", "O que resolver agora"],
+            ["conversas", "◌", "Conversas", "Inbox por categoria"],
+            ["acompanhamentos", "↻", "Acompanhamentos", "Retornos e pendências"],
           ],
         },
         {
-          title: 'Operação',
+          title: "Operação",
           items: [
-            ['orcamentos', 'R$', 'Orçamentos', 'Pedidos e propostas'],
-            ['cobrancas', '◈', 'Cobranças', 'Pagamentos e promessas'],
-            ['documentos', '▣', 'Documentos', 'Recebidos e pendentes'],
-            ['agendamentos', '◷', 'Agendamentos', 'Confirmar e remarcar'],
+            ["orcamentos", "R$", "Orçamentos", "Pedidos e propostas"],
+            ["cobrancas", "◈", "Cobranças", "Pagamentos e promessas"],
+            ["documentos", "▣", "Documentos", "Recebidos e pendentes"],
+            ["agendamentos", "◷", "Agendamentos", "Confirmar e remarcar"],
           ],
         },
         {
-          title: 'Resultado',
+          title: "Resultado",
           items: [
-            ['fechamentos', '✓', 'Fechamentos', 'Conversas que viraram venda'],
-            ['relatorios', '▰', 'Relatórios', 'Indicadores da operação'],
+            ["fechamentos", "✓", "Fechamentos", "Conversas que viraram venda"],
+            ["relatorios", "▰", "Relatórios", "Indicadores da operação"],
           ],
         },
         {
-          title: 'Sistema',
-          items: [
-            ['configuracoes', '⚙', 'Configurações', 'Regras e mensagens'],
-          ],
+          title: "Sistema",
+          items: [["configuracoes", "⚙", "Configurações", "Regras e mensagens"]],
         },
       ];
 
       const moduleBase = {
         relatorios: {
-          title: 'Relatórios',
-          subtitle:
-            'Indicadores simples para o dono enxergar atendimento, acompanhamento e resultado.',
+          title: "Relatórios",
+          subtitle: "Indicadores simples para o dono enxergar atendimento, acompanhamento e resultado.",
           kpis: [
-            ['34min', 'tempo médio resposta', 'meta: 15min'],
-            ['86', 'conversas resolvidas', '7 dias'],
-            ['18%', 'taxa de fechamento', 'orçamentos'],
-            ['R$ 22.370', 'valor fechado', 'mês'],
+            ["34min", "tempo médio resposta", "meta: 15min"],
+            ["86", "conversas resolvidas", "7 dias"],
+            ["18%", "taxa de fechamento", "orçamentos"],
+            ["R$ 22.370", "valor fechado", "mês"],
           ],
-          tableTitle: 'Indicadores por responsável',
-          headers: [
-            'Responsável',
-            'Conversas',
-            'Pendências',
-            'Orçamentos',
-            'Fechamentos',
-            'Tempo resposta',
-            'Status',
-          ],
+          tableTitle: "Indicadores por responsável",
+          headers: ["Responsável", "Conversas", "Pendências", "Orçamentos", "Fechamentos", "Tempo resposta", "Status"],
           rows: [
-            ['Ana', '42', '8', '12', 'R$ 8.450', '22min', ['Boa', 'green']],
-            [
-              'Carlos',
-              '31',
-              '6',
-              '8',
-              'R$ 6.900',
-              '38min',
-              ['Atenção', 'yellow'],
-            ],
-            [
-              'Financeiro',
-              '18',
-              '5',
-              '-',
-              'R$ 4.820',
-              '1h10',
-              ['Atenção', 'yellow'],
-            ],
+            ["Ana", "42", "8", "12", "R$ 8.450", "22min", ["Boa", "green"]],
+            ["Carlos", "31", "6", "8", "R$ 6.900", "38min", ["Atenção", "yellow"]],
+            ["Financeiro", "18", "5", "-", "R$ 4.820", "1h10", ["Atenção", "yellow"]],
           ],
         },
         configuracoes: {
-          title: 'Configurações',
-          subtitle: 'Regras de alerta, categorias, equipe e mensagens prontas.',
+          title: "Configurações",
+          subtitle: "Regras de alerta, categorias, equipe e mensagens prontas.",
           kpis: [
-            ['9', 'categorias ativas', 'padrão'],
-            ['4', 'responsáveis', 'equipe'],
-            ['15min', 'alerta sem resposta', 'configurado'],
-            ['8', 'modelos de mensagem', 'prontos'],
+            ["9", "categorias ativas", "padrão"],
+            ["4", "responsáveis", "equipe"],
+            ["15min", "alerta sem resposta", "configurado"],
+            ["8", "modelos de mensagem", "prontos"],
           ],
-          tableTitle: 'Regras inteligentes',
-          headers: ['Regra', 'Condição', 'Ação', 'Status'],
+          tableTitle: "Regras inteligentes",
+          headers: ["Regra", "Condição", "Ação", "Status"],
           rows: [
-            [
-              'Sem resposta',
-              'Mais de 2h sem retorno',
-              'Marcar como Atenção',
-              ['Ativa', 'green'],
-            ],
-            [
-              'Orçamento enviado',
-              '24h sem resposta',
-              'Criar follow-up',
-              ['Ativa', 'green'],
-            ],
-            [
-              'Pagamento prometido',
-              'Data atual',
-              'Entrar em Cobranças do dia',
-              ['Ativa', 'green'],
-            ],
-            [
-              'Reclamação',
-              'Palavras de risco',
-              'Marcar como Prioridade alta',
-              ['Ativa', 'green'],
-            ],
+            ["Sem resposta", "Mais de 2h sem retorno", "Marcar como Atenção", ["Ativa", "green"]],
+            ["Orçamento enviado", "24h sem resposta", "Criar follow-up", ["Ativa", "green"]],
+            ["Pagamento prometido", "Data atual", "Entrar em Cobranças do dia", ["Ativa", "green"]],
+            ["Reclamação", "Palavras de risco", "Marcar como Prioridade alta", ["Ativa", "green"]],
           ],
         },
       };
@@ -1695,36 +1702,30 @@
       function fallbackData() {
         chats = [
           {
-            id: 'fallback-1',
-            name: 'Maria Souza',
-            initials: 'MS',
-            phone: '5548999990001',
-            category: 'Orçamento',
-            status: 'Aguardando envio de proposta',
-            priority: 'Alta',
-            priorityClass: 'red',
-            last: 'Pode me mandar o orçamento?',
-            time: '2h',
-            value: 'R$ 1.200',
-            owner: 'Ana',
-            action: 'Enviar orçamento',
-            due: 'Hoje às 16h',
-            risk: 'Lead quente parado',
-            info: 'Orçamento • lead quente parado',
-            summary:
-              'Maria pediu orçamento para um serviço e ainda não recebeu proposta.',
-            journey: ['Chegou', 'Qualificado', 'Proposta pendente'],
+            id: "fallback-1",
+            name: "Maria Souza",
+            initials: "MS",
+            phone: "5548999990001",
+            category: "Orçamento",
+            status: "Aguardando envio de proposta",
+            priority: "Alta",
+            priorityClass: "red",
+            last: "Pode me mandar o orçamento?",
+            time: "2h",
+            value: "R$ 1.200",
+            owner: "Ana",
+            action: "Enviar orçamento",
+            due: "Hoje às 16h",
+            risk: "Lead quente parado",
+            info: "Orçamento • lead quente parado",
+            summary: "Maria pediu orçamento para um serviço e ainda não recebeu proposta.",
+            journey: ["Chegou", "Qualificado", "Proposta pendente"],
             messages: [
-              ['client', 'Olá, quero fazer um orçamento.', '09:12'],
-              ['agent', 'Claro, me passa mais detalhes do serviço?', '09:18'],
-              [
-                'client',
-                'Seria para reformar um banheiro pequeno. Pode me mandar o orçamento?',
-                '09:22',
-              ],
+              ["client", "Olá, quero fazer um orçamento.", "09:12"],
+              ["agent", "Claro, me passa mais detalhes do serviço?", "09:18"],
+              ["client", "Seria para reformar um banheiro pequeno. Pode me mandar o orçamento?", "09:22"],
             ],
-            suggestion:
-              'Perfeito. Para montar um orçamento mais preciso, me confirma a metragem aproximada, cidade/bairro e quando gostaria de iniciar?',
+            suggestion: "Perfeito. Para montar um orçamento mais preciso, me confirma a metragem aproximada, cidade/bairro e quando gostaria de iniciar?",
           },
         ];
         fechamentos = [];
@@ -1732,21 +1733,21 @@
 
       async function apiGet(path) {
         const response = await fetch(API_BASE + path);
-        if (!response.ok) throw new Error('Falha ao buscar dados da API.');
+        if (!response.ok) throw new Error("Falha ao buscar dados da API.");
         return response.json();
       }
 
       async function apiPost(path, body = {}) {
         const response = await fetch(API_BASE + path, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
 
         const data = await response.json().catch(() => ({}));
 
         if (!response.ok || data.success === false) {
-          throw new Error(data.error || 'Falha ao salvar dados na API.');
+          throw new Error(data.error || "Falha ao salvar dados na API.");
         }
 
         return data;
@@ -1754,7 +1755,7 @@
 
       async function carregarDadosDoBackend() {
         try {
-          const data = await apiGet('/api/conversations');
+          const data = await apiGet("/api/conversations");
           chats = data.conversas || [];
           fechamentos = data.fechamentos || [];
           backendLoaded = true;
@@ -1773,43 +1774,37 @@
           renderChatList();
           renderConversation();
 
-          const chatList = document.getElementById('chatList');
+          const chatList = document.getElementById("chatList");
           if (chatList && !backendLoaded) {
-            const aviso = document.createElement('div');
-            aviso.className = 'empty-state';
-            aviso.innerHTML =
-              'Servidor ainda não respondeu. O painel abriu com dados temporários.';
+            const aviso = document.createElement("div");
+            aviso.className = "empty-state";
+            aviso.innerHTML = "Servidor ainda não respondeu. O painel abriu com dados temporários.";
             chatList.prepend(aviso);
           }
         }
       }
 
       function isResolved(chat) {
-        return chat.status === 'Resolvido';
+        return chat.status === "Resolvido";
       }
 
       function badge(value) {
         return Array.isArray(value)
           ? `<span class="badge ${value[1]}">● ${value[0]}</span>`
-          : value || '-';
+          : value || "-";
       }
 
       function switchScreen(id) {
-        document
-          .querySelectorAll('.screen')
-          .forEach((screen) => screen.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
+        document.querySelectorAll(".screen").forEach((screen) => screen.classList.remove("active"));
+        document.getElementById(id).classList.add("active");
       }
 
       function abrirPainel() {
-        companyName =
-          document.getElementById('companyInput')?.value ||
-          companyName ||
-          'Operação Principal';
-        const companyBox = document.getElementById('companyNameBox');
+        companyName = document.getElementById("companyInput")?.value || companyName || "Operação Principal";
+        const companyBox = document.getElementById("companyNameBox");
         if (companyBox) companyBox.textContent = companyName;
 
-        switchScreen('appScreen');
+        switchScreen("appScreen");
         renderMenu();
         renderChatList();
         renderConversation();
@@ -1818,8 +1813,8 @@
       }
 
       function setActiveChip(filter) {
-        document.querySelectorAll('.chip').forEach((chip) => {
-          chip.classList.toggle('active', chip.dataset.filter === filter);
+        document.querySelectorAll(".chip").forEach((chip) => {
+          chip.classList.toggle("active", chip.dataset.filter === filter);
         });
       }
 
@@ -1830,40 +1825,34 @@
           acompanhamentos: chats.filter(
             (chat) =>
               !isResolved(chat) &&
-              (chat.status.includes('Retorno') ||
-                chat.status.includes('Respondido') ||
-                chat.status.includes('pendente') ||
-                chat.status.includes('Aguardando') ||
-                chat.status.includes('Promessa'))
+              (
+                chat.status.includes("Retorno") ||
+                chat.status.includes("Respondido") ||
+                chat.status.includes("pendente") ||
+                chat.status.includes("Aguardando") ||
+                chat.status.includes("Promessa")
+              )
           ).length,
-          orcamentos: chats.filter(
-            (chat) => chat.category === 'Orçamento' && !isResolved(chat)
-          ).length,
-          cobrancas: chats.filter(
-            (chat) => chat.category === 'Cobrança' && !isResolved(chat)
-          ).length,
-          documentos: chats.filter(
-            (chat) => chat.category === 'Documento' && !isResolved(chat)
-          ).length,
-          agendamentos: chats.filter(
-            (chat) => chat.category === 'Agendamento' && !isResolved(chat)
-          ).length,
+          orcamentos: chats.filter((chat) => chat.category === "Orçamento" && !isResolved(chat)).length,
+          cobrancas: chats.filter((chat) => chat.category === "Cobrança" && !isResolved(chat)).length,
+          documentos: chats.filter((chat) => chat.category === "Documento" && !isResolved(chat)).length,
+          agendamentos: chats.filter((chat) => chat.category === "Agendamento" && !isResolved(chat)).length,
           fechamentos: fechamentos.length,
-          relatorios: '',
-          configuracoes: '',
+          relatorios: "",
+          configuracoes: "",
         };
       }
 
       function getMenuColor(key, count) {
-        if (count === '' || count === undefined) return '';
-        if (key === 'today' && Number(count) > 0) return 'red';
-        if (key === 'acompanhamentos' && Number(count) > 0) return 'yellow';
-        if (key === 'fechamentos') return 'green';
-        return 'blue';
+        if (count === "" || count === undefined) return "";
+        if (key === "today" && Number(count) > 0) return "red";
+        if (key === "acompanhamentos" && Number(count) > 0) return "yellow";
+        if (key === "fechamentos") return "green";
+        return "blue";
       }
 
       function renderMenu() {
-        const menu = document.getElementById('mainMenu');
+        const menu = document.getElementById("mainMenu");
         if (!menu) return;
 
         const counts = getMenuCounts();
@@ -1878,30 +1867,26 @@
                   const color = getMenuColor(key, count);
 
                   return `
-                    <button class="nav-btn ${
-                      key === state.currentView ? 'active' : ''
-                    }" type="button" data-view="${key}">
+                    <button class="nav-btn ${key === state.currentView ? "active" : ""}" type="button" data-view="${key}">
                       <span class="nav-icon">${item[1]}</span>
                       <span>
                         <span class="nav-title">${item[2]}</span>
                         <span class="nav-desc">${item[3]}</span>
                       </span>
                       ${
-                        count !== '' && count !== undefined
+                        count !== "" && count !== undefined
                           ? `<span class="nav-count ${color}">${count}</span>`
-                          : '<span></span>'
+                          : "<span></span>"
                       }
                     </button>
                   `;
                 })
-                .join('')}`
+                .join("")}`
           )
-          .join('');
+          .join("");
 
-        document.querySelectorAll('.nav-btn').forEach((button) => {
-          button.addEventListener('click', () =>
-            changeView(button.dataset.view)
-          );
+        document.querySelectorAll(".nav-btn").forEach((button) => {
+          button.addEventListener("click", () => changeView(button.dataset.view));
         });
       }
 
@@ -1909,33 +1894,20 @@
         state.currentView = view;
 
         const titles = {
-          today: ['Hoje no ZapLens', 'Pendências que ainda precisam de ação.'],
-          conversas: ['Todas as Conversas', 'Histórico completo de conversas.'],
-          acompanhamentos: [
-            'Acompanhamentos',
-            'Conversas que já foram respondidas, mas ainda precisam de ação.',
-          ],
-          orcamentos: ['Orçamentos', 'Pedidos e propostas em aberto.'],
-          cobrancas: [
-            'Cobranças',
-            'Promessas de pagamento e cobranças pendentes.',
-          ],
-          documentos: [
-            'Documentos',
-            'Documentos recebidos, pendentes ou aguardando conferência.',
-          ],
-          agendamentos: [
-            'Agendamentos',
-            'Confirmações, visitas, horários e reagendamentos.',
-          ],
+          today: ["Hoje no ZapLens", "Pendências que ainda precisam de ação."],
+          conversas: ["Todas as Conversas", "Histórico completo de conversas."],
+          acompanhamentos: ["Acompanhamentos", "Conversas que já foram respondidas, mas ainda precisam de ação."],
+          orcamentos: ["Orçamentos", "Pedidos e propostas em aberto."],
+          cobrancas: ["Cobranças", "Promessas de pagamento e cobranças pendentes."],
+          documentos: ["Documentos", "Documentos recebidos, pendentes ou aguardando conferência."],
+          agendamentos: ["Agendamentos", "Confirmações, visitas, horários e reagendamentos."],
         };
 
         if (titles[view]) {
-          document.getElementById('inboxTitle').textContent = titles[view][0];
-          document.getElementById('inboxSubtitle').textContent =
-            titles[view][1];
-          state.currentFilter = 'Todos';
-          setActiveChip('Todos');
+          document.getElementById("inboxTitle").textContent = titles[view][0];
+          document.getElementById("inboxSubtitle").textContent = titles[view][1];
+          state.currentFilter = "Todos";
+          setActiveChip("Todos");
           renderMenu();
           renderChatList();
           renderConversation();
@@ -1947,45 +1919,42 @@
       }
 
       function renderChatList() {
-        const chatList = document.getElementById('chatList');
+        const chatList = document.getElementById("chatList");
         if (!chatList) return;
 
-        const searchInput = document.getElementById('searchInput');
-        const search = (searchInput?.value || '').toLowerCase();
+        const searchInput = document.getElementById("searchInput");
+        const search = (searchInput?.value || "").toLowerCase();
 
         const filtered = chats
           .filter((chat) => {
             let viewMatch = true;
 
-            if (state.currentView === 'today') viewMatch = !isResolved(chat);
-            if (state.currentView === 'orcamentos')
-              viewMatch = chat.category === 'Orçamento' && !isResolved(chat);
-            if (state.currentView === 'cobrancas')
-              viewMatch = chat.category === 'Cobrança' && !isResolved(chat);
-            if (state.currentView === 'documentos')
-              viewMatch = chat.category === 'Documento' && !isResolved(chat);
-            if (state.currentView === 'agendamentos')
-              viewMatch = chat.category === 'Agendamento' && !isResolved(chat);
+            if (state.currentView === "today") viewMatch = !isResolved(chat);
+            if (state.currentView === "orcamentos") viewMatch = chat.category === "Orçamento" && !isResolved(chat);
+            if (state.currentView === "cobrancas") viewMatch = chat.category === "Cobrança" && !isResolved(chat);
+            if (state.currentView === "documentos") viewMatch = chat.category === "Documento" && !isResolved(chat);
+            if (state.currentView === "agendamentos") viewMatch = chat.category === "Agendamento" && !isResolved(chat);
 
-            if (state.currentView === 'acompanhamentos') {
+            if (state.currentView === "acompanhamentos") {
               viewMatch =
                 !isResolved(chat) &&
-                (chat.status.includes('Retorno') ||
-                  chat.status.includes('Respondido') ||
-                  chat.status.includes('pendente') ||
-                  chat.status.includes('Aguardando') ||
-                  chat.status.includes('Promessa'));
+                (
+                  chat.status.includes("Retorno") ||
+                  chat.status.includes("Respondido") ||
+                  chat.status.includes("pendente") ||
+                  chat.status.includes("Aguardando") ||
+                  chat.status.includes("Promessa")
+                );
             }
 
             let filterMatch =
-              state.currentFilter === 'Todos' ||
+              state.currentFilter === "Todos" ||
               chat.category === state.currentFilter ||
               chat.status.includes(state.currentFilter);
 
-            if (state.currentFilter === 'Sem resposta') {
+            if (state.currentFilter === "Sem resposta") {
               const lastMessage = chat.messages?.[chat.messages.length - 1];
-              filterMatch =
-                lastMessage && lastMessage[0] === 'client' && !isResolved(chat);
+              filterMatch = lastMessage && lastMessage[0] === "client" && !isResolved(chat);
             }
 
             const searchMatch =
@@ -1999,10 +1968,8 @@
           .sort((a, b) => {
             if (isResolved(a) && !isResolved(b)) return 1;
             if (!isResolved(a) && isResolved(b)) return -1;
-            if (a.priorityClass === 'red' && b.priorityClass !== 'red')
-              return -1;
-            if (a.priorityClass !== 'red' && b.priorityClass === 'red')
-              return 1;
+            if (a.priorityClass === "red" && b.priorityClass !== "red") return -1;
+            if (a.priorityClass !== "red" && b.priorityClass === "red") return 1;
             return 0;
           });
 
@@ -2021,30 +1988,24 @@
             const index = chats.findIndex((item) => item.id === chat.id);
 
             return `
-              <div class="chat-item ${
-                index === state.currentChat ? 'active' : ''
-              } ${isResolved(chat) ? 'resolved' : ''}" data-index="${index}">
+              <div class="chat-item ${index === state.currentChat ? "active" : ""} ${isResolved(chat) ? "resolved" : ""}" data-index="${index}">
                 <div class="chat-top">
                   <strong>${chat.name}</strong>
-                  <span class="time">${chat.time || 'agora'}</span>
+                  <span class="time">${chat.time || "agora"}</span>
                 </div>
-                <div class="chat-msg">${chat.last || ''}</div>
+                <div class="chat-msg">${chat.last || ""}</div>
                 <div class="chat-meta">
-                  <span class="badge blue">${chat.category || 'Conversa'}</span>
-                  <span class="badge ${chat.priorityClass || 'yellow'}">${
-              chat.status || 'Nova mensagem'
-            }</span>
-                  ${
-                    chat.value ? `<span class="value">${chat.value}</span>` : ''
-                  }
+                  <span class="badge blue">${chat.category || "Conversa"}</span>
+                  <span class="badge ${chat.priorityClass || "yellow"}">${chat.status || "Nova mensagem"}</span>
+                  ${chat.value ? `<span class="value">${chat.value}</span>` : ""}
                 </div>
               </div>
             `;
           })
-          .join('');
+          .join("");
 
-        document.querySelectorAll('.chat-item').forEach((item) => {
-          item.addEventListener('click', () => {
+        document.querySelectorAll(".chat-item").forEach((item) => {
+          item.addEventListener("click", () => {
             state.currentChat = Number(item.dataset.index);
             renderChatList();
             renderConversation();
@@ -2056,62 +2017,45 @@
         const chat = chats[state.currentChat];
 
         if (!chat) {
-          document.getElementById('clientAvatar').textContent = '-';
-          document.getElementById('clientName').textContent =
-            'Nenhuma conversa';
-          document.getElementById('clientInfo').textContent =
-            'Selecione uma conversa';
-          document.getElementById('messages').innerHTML = '';
-          document.getElementById('suggestionText').textContent = '';
+          document.getElementById("clientAvatar").textContent = "-";
+          document.getElementById("clientName").textContent = "Nenhuma conversa";
+          document.getElementById("clientInfo").textContent = "Selecione uma conversa";
+          document.getElementById("messages").innerHTML = "";
+          document.getElementById("suggestionText").textContent = "";
           return;
         }
 
-        document.getElementById('clientAvatar').textContent =
-          chat.initials || 'CL';
-        document.getElementById('clientName').textContent =
-          chat.name || 'Cliente';
-        document.getElementById('clientInfo').textContent =
-          chat.info || `${chat.category} • ${chat.status}`;
+        document.getElementById("clientAvatar").textContent = chat.initials || "CL";
+        document.getElementById("clientName").textContent = chat.name || "Cliente";
+        document.getElementById("clientInfo").textContent = chat.info || `${chat.category} • ${chat.status}`;
 
-        document.getElementById('messages').innerHTML = `
-          <div class="system-note">Conversa classificada como ${
-            chat.category || 'Conversa'
-          }</div>
+        document.getElementById("messages").innerHTML = `
+          <div class="system-note">Conversa classificada como ${chat.category || "Conversa"}</div>
           ${(chat.messages || [])
             .map(
               (message) =>
-                `<div class="bubble ${
-                  message[0] === 'client' ? 'client-bubble' : 'agent-bubble'
-                }">
+                `<div class="bubble ${message[0] === "client" ? "client-bubble" : "agent-bubble"}">
                   ${message[1]}<small>${message[2]}</small>
                 </div>`
             )
-            .join('')}
+            .join("")}
         `;
 
-        document.getElementById('suggestionText').textContent =
-          chat.suggestion || '';
-        document.getElementById('trackCategory').textContent =
-          chat.category || '-';
-        document.getElementById('trackStatus').textContent = chat.status || '-';
-        document.getElementById('trackOwner').textContent = chat.owner || '-';
-        document.getElementById('trackAction').textContent = chat.action || '-';
-        document.getElementById('trackDue').textContent = chat.due || '-';
-        document.getElementById('trackValue').textContent = chat.value || '-';
-        document.getElementById('trackRisk').textContent = chat.risk || '-';
-        document.getElementById('smartSummary').textContent =
-          chat.summary || '';
+        document.getElementById("suggestionText").textContent = chat.suggestion || "";
+        document.getElementById("trackCategory").textContent = chat.category || "-";
+        document.getElementById("trackStatus").textContent = chat.status || "-";
+        document.getElementById("trackOwner").textContent = chat.owner || "-";
+        document.getElementById("trackAction").textContent = chat.action || "-";
+        document.getElementById("trackDue").textContent = chat.due || "-";
+        document.getElementById("trackValue").textContent = chat.value || "-";
+        document.getElementById("trackRisk").textContent = chat.risk || "-";
+        document.getElementById("smartSummary").textContent = chat.summary || "";
 
-        document.getElementById('journey').innerHTML = (chat.journey || [])
-          .map(
-            (step, index) =>
-              `<span class="step ${
-                index < (chat.journey || []).length - 1 ? 'done' : ''
-              }">${step}</span>`
-          )
-          .join('');
+        document.getElementById("journey").innerHTML = (chat.journey || [])
+          .map((step, index) => `<span class="step ${index < (chat.journey || []).length - 1 ? "done" : ""}">${step}</span>`)
+          .join("");
 
-        const messages = document.getElementById('messages');
+        const messages = document.getElementById("messages");
         messages.scrollTop = messages.scrollHeight;
       }
 
@@ -2121,164 +2065,91 @@
             .filter((chat) => chat.category === category && !isResolved(chat))
             .map((chat) => [
               chat.name,
-              chat.value || '-',
+              chat.value || "-",
               chat.status,
               chat.action,
               chat.due,
               chat.owner,
-              [
-                chat.priorityClass === 'red' ? 'Atenção' : 'Aberto',
-                chat.priorityClass,
-              ],
+              [chat.priorityClass === "red" ? "Atenção" : "Aberto", chat.priorityClass],
             ]);
 
-        if (view === 'orcamentos') {
+        if (view === "orcamentos") {
           return {
-            title: 'Orçamentos',
-            subtitle: 'Pedidos, propostas em aberto e follow-ups.',
+            title: "Orçamentos",
+            subtitle: "Pedidos, propostas em aberto e follow-ups.",
             kpis: [
-              [
-                String(getMenuCounts().orcamentos),
-                'orçamentos abertos',
-                'aguardando ação',
-              ],
-              ['R$ 18.450', 'valor potencial', 'em acompanhamento'],
-              ['5', 'sem follow-up', 'atenção'],
-              ['3', 'fechados hoje', 'registrados'],
+              [String(getMenuCounts().orcamentos), "orçamentos abertos", "aguardando ação"],
+              ["R$ 18.450", "valor potencial", "em acompanhamento"],
+              ["5", "sem follow-up", "atenção"],
+              ["3", "fechados hoje", "registrados"],
             ],
-            tableTitle: 'Mapa de orçamentos',
-            headers: [
-              'Cliente',
-              'Valor',
-              'Status',
-              'Próxima ação',
-              'Prazo',
-              'Responsável',
-              'Prioridade',
-            ],
-            rows: rowsFromChats('Orçamento'),
+            tableTitle: "Mapa de orçamentos",
+            headers: ["Cliente", "Valor", "Status", "Próxima ação", "Prazo", "Responsável", "Prioridade"],
+            rows: rowsFromChats("Orçamento"),
           };
         }
 
-        if (view === 'cobrancas') {
+        if (view === "cobrancas") {
           return {
-            title: 'Cobranças',
-            subtitle: 'Promessas de pagamento e cobranças pendentes.',
+            title: "Cobranças",
+            subtitle: "Promessas de pagamento e cobranças pendentes.",
             kpis: [
-              [
-                String(getMenuCounts().cobrancas),
-                'cobranças abertas',
-                'aguardando',
-              ],
-              ['R$ 7.820', 'pendente', 'em acompanhamento'],
-              ['5', 'promessas hoje', 'acompanhar'],
-              ['3', 'atrasadas', 'prioridade'],
+              [String(getMenuCounts().cobrancas), "cobranças abertas", "aguardando"],
+              ["R$ 7.820", "pendente", "em acompanhamento"],
+              ["5", "promessas hoje", "acompanhar"],
+              ["3", "atrasadas", "prioridade"],
             ],
-            tableTitle: 'Cobranças do dia',
-            headers: [
-              'Cliente',
-              'Valor',
-              'Status',
-              'Próxima ação',
-              'Prazo',
-              'Responsável',
-              'Prioridade',
-            ],
-            rows: rowsFromChats('Cobrança'),
+            tableTitle: "Cobranças do dia",
+            headers: ["Cliente", "Valor", "Status", "Próxima ação", "Prazo", "Responsável", "Prioridade"],
+            rows: rowsFromChats("Cobrança"),
           };
         }
 
-        if (view === 'documentos') {
+        if (view === "documentos") {
           return {
-            title: 'Documentos',
-            subtitle:
-              'Documentos recebidos, pendentes ou aguardando conferência.',
+            title: "Documentos",
+            subtitle: "Documentos recebidos, pendentes ou aguardando conferência.",
             kpis: [
-              [
-                String(getMenuCounts().documentos),
-                'documentos em aberto',
-                'acompanhar',
-              ],
-              ['7', 'recebidos', 'conferência'],
-              ['4', 'pendentes', 'cobrar'],
-              ['1', 'inválido', 'corrigir'],
+              [String(getMenuCounts().documentos), "documentos em aberto", "acompanhar"],
+              ["7", "recebidos", "conferência"],
+              ["4", "pendentes", "cobrar"],
+              ["1", "inválido", "corrigir"],
             ],
-            tableTitle: 'Controle de documentos',
-            headers: [
-              'Cliente',
-              'Valor',
-              'Status',
-              'Próxima ação',
-              'Prazo',
-              'Responsável',
-              'Prioridade',
-            ],
-            rows: rowsFromChats('Documento'),
+            tableTitle: "Controle de documentos",
+            headers: ["Cliente", "Valor", "Status", "Próxima ação", "Prazo", "Responsável", "Prioridade"],
+            rows: rowsFromChats("Documento"),
           };
         }
 
-        if (view === 'agendamentos') {
+        if (view === "agendamentos") {
           return {
-            title: 'Agendamentos',
-            subtitle: 'Confirmações, visitas, horários e reagendamentos.',
+            title: "Agendamentos",
+            subtitle: "Confirmações, visitas, horários e reagendamentos.",
             kpis: [
-              [
-                String(getMenuCounts().agendamentos),
-                'agendamentos abertos',
-                'confirmar',
-              ],
-              ['9', 'para hoje', 'agenda'],
-              ['4', 'sem confirmação', 'atenção'],
-              ['2', 'reagendamentos', 'pendentes'],
+              [String(getMenuCounts().agendamentos), "agendamentos abertos", "confirmar"],
+              ["9", "para hoje", "agenda"],
+              ["4", "sem confirmação", "atenção"],
+              ["2", "reagendamentos", "pendentes"],
             ],
-            tableTitle: 'Agenda de conversas',
-            headers: [
-              'Cliente',
-              'Valor',
-              'Status',
-              'Próxima ação',
-              'Prazo',
-              'Responsável',
-              'Prioridade',
-            ],
-            rows: rowsFromChats('Agendamento'),
+            tableTitle: "Agenda de conversas",
+            headers: ["Cliente", "Valor", "Status", "Próxima ação", "Prazo", "Responsável", "Prioridade"],
+            rows: rowsFromChats("Agendamento"),
           };
         }
 
-        if (view === 'fechamentos') {
+        if (view === "fechamentos") {
           return {
-            title: 'Conversas que viraram resultado',
-            subtitle:
-              'Orçamentos, pedidos, contratos, pagamentos e agendamentos que nasceram nas conversas.',
+            title: "Conversas que viraram resultado",
+            subtitle: "Orçamentos, pedidos, contratos, pagamentos e agendamentos que nasceram nas conversas.",
             kpis: [
-              [
-                String(fechamentos.length),
-                'fechamentos registrados',
-                'no backend',
-              ],
-              ['R$ 22.370', 'fechados este mês', 'acompanhados'],
-              ['23', 'pedidos confirmados', 'registrados'],
-              ['R$ 4.820', 'pagamentos recebidos', 'acompanhados'],
+              [String(fechamentos.length), "fechamentos registrados", "no backend"],
+              ["R$ 22.370", "fechados este mês", "acompanhados"],
+              ["23", "pedidos confirmados", "registrados"],
+              ["R$ 4.820", "pagamentos recebidos", "acompanhados"],
             ],
-            tableTitle: 'Fechamentos registrados',
-            headers: [
-              'Cliente',
-              'Tipo',
-              'Valor',
-              'Responsável',
-              'Data',
-              'Próxima ação',
-              'Status',
-            ],
-            rows: fechamentos.map((f) => [
-              f.cliente,
-              f.tipo,
-              f.valor,
-              f.responsavel,
-              f.data,
-              f.proximaAcao,
-              [f.status, 'green'],
-            ]),
+            tableTitle: "Fechamentos registrados",
+            headers: ["Cliente", "Tipo", "Valor", "Responsável", "Data", "Próxima ação", "Status"],
+            rows: fechamentos.map((f) => [f.cliente, f.tipo, f.valor, f.responsavel, f.data, f.proximaAcao, [f.status, "green"]]),
           };
         }
 
@@ -2289,33 +2160,21 @@
         const data = getModuleData(view);
         if (!data) return;
 
-        document.getElementById('modalTitle').textContent = data.title;
-        document.getElementById('modalSubtitle').textContent = data.subtitle;
+        document.getElementById("modalTitle").textContent = data.title;
+        document.getElementById("modalSubtitle").textContent = data.subtitle;
 
         const kpis = data.kpis
-          .map(
-            (kpi) =>
-              `<div class="card kpi"><small>${kpi[1]}</small><h3>${kpi[0]}</h3><p>${kpi[2]}</p></div>`
-          )
-          .join('');
+          .map((kpi) => `<div class="card kpi"><small>${kpi[1]}</small><h3>${kpi[0]}</h3><p>${kpi[2]}</p></div>`)
+          .join("");
 
         const rows =
           data.rows && data.rows.length
-            ? data.rows
-                .map(
-                  (row) =>
-                    `<tr>${row
-                      .map((cell) => `<td>${badge(cell)}</td>`)
-                      .join('')}</tr>`
-                )
-                .join('')
+            ? data.rows.map((row) => `<tr>${row.map((cell) => `<td>${badge(cell)}</td>`).join("")}</tr>`).join("")
             : `<tr><td colspan="${data.headers.length}">Nenhum item encontrado neste módulo.</td></tr>`;
 
-        const headers = data.headers
-          .map((header) => `<th>${header}</th>`)
-          .join('');
+        const headers = data.headers.map((header) => `<th>${header}</th>`).join("");
 
-        document.getElementById('modalBody').innerHTML = `
+        document.getElementById("modalBody").innerHTML = `
           <div class="grid kpis">${kpis}</div>
           <div class="card" style="margin-bottom:12px">
             <strong style="color:var(--navy)">${data.tableTitle}</strong>
@@ -2328,25 +2187,25 @@
           </div>
         `;
 
-        document.getElementById('modal').classList.add('active');
+        document.getElementById("modal").classList.add("active");
       }
 
       function closeModal() {
-        document.getElementById('modal').classList.remove('active');
+        document.getElementById("modal").classList.remove("active");
         renderMenu();
       }
 
       async function sendCurrentMessage() {
-        const input = document.getElementById('replyInput');
+        const input = document.getElementById("replyInput");
         const text = input.value.trim();
         const chat = chats[state.currentChat];
 
         if (!text || !chat) return;
 
-        input.value = '';
+        input.value = "";
 
         try {
-          const data = await apiPost('/api/send-message', {
+          const data = await apiPost("/api/send-message", {
             conversationId: chat.id,
             message: text,
           });
@@ -2358,7 +2217,7 @@
           renderChatList();
           renderConversation();
         } catch (error) {
-          alert('Não foi possível enviar a mensagem: ' + error.message);
+          alert("Não foi possível enviar a mensagem: " + error.message);
           input.value = text;
         }
       }
@@ -2368,10 +2227,7 @@
         if (!chat) return;
 
         try {
-          const data = await apiPost(
-            `/api/conversations/${chat.id}/update`,
-            updates
-          );
+          const data = await apiPost(`/api/conversations/${chat.id}/update`, updates);
           const index = chats.findIndex((item) => item.id === data.conversa.id);
           if (index >= 0) chats[index] = data.conversa;
 
@@ -2379,27 +2235,27 @@
           renderChatList();
           renderConversation();
         } catch (error) {
-          alert('Não foi possível atualizar a conversa: ' + error.message);
+          alert("Não foi possível atualizar a conversa: " + error.message);
         }
       }
 
       async function resolveCurrentConversation() {
         await updateCurrentConversation({
-          status: 'Resolvido',
-          action: 'Nenhuma ação pendente',
-          due: '-',
-          risk: 'Conversa concluída',
-          priorityClass: 'gray',
+          status: "Resolvido",
+          action: "Nenhuma ação pendente",
+          due: "-",
+          risk: "Conversa concluída",
+          priorityClass: "gray",
         });
       }
 
       async function scheduleCurrentReturn() {
         await updateCurrentConversation({
-          status: 'Retorno agendado',
-          action: 'Retornar ao cliente',
-          due: 'Amanhã às 10h',
-          risk: 'Aguardando retorno programado',
-          priorityClass: 'yellow',
+          status: "Retorno agendado",
+          action: "Retornar ao cliente",
+          due: "Amanhã às 10h",
+          risk: "Aguardando retorno programado",
+          priorityClass: "yellow",
         });
       }
 
@@ -2416,25 +2272,19 @@
           renderMenu();
           renderChatList();
           renderConversation();
-          renderModal('fechamentos');
+          renderModal("fechamentos");
         } catch (error) {
-          alert('Não foi possível registrar o fechamento: ' + error.message);
+          alert("Não foi possível registrar o fechamento: " + error.message);
         }
       }
 
-      async function setFastTrack(
-        category,
-        status,
-        action,
-        due,
-        priorityClass
-      ) {
+      async function setFastTrack(category, status, action, due, priorityClass) {
         await updateCurrentConversation({
           category,
           status,
           action,
           due,
-          risk: 'Acompanhamento criado pelo ZapLens',
+          risk: "Acompanhamento criado pelo ZapLens",
           priorityClass,
           info: `${category} • ${status}`,
         });
@@ -2442,191 +2292,231 @@
 
       async function createNewConversation() {
         const examples = [
-          {
-            name: 'Novo Cliente',
-            message: 'Oi, quanto fica para fazer esse serviço?',
-          },
-          {
-            name: 'Cliente Pagamento',
-            message: 'Vou fazer o PIX hoje e mando comprovante.',
-          },
-          {
-            name: 'Cliente Documento',
-            message: 'Segue o documento que você pediu.',
-          },
-          { name: 'Cliente Agenda', message: 'Tem horário para amanhã?' },
+          { name: "Novo Cliente", message: "Oi, quanto fica para fazer esse serviço?" },
+          { name: "Cliente Pagamento", message: "Vou fazer o PIX hoje e mando comprovante." },
+          { name: "Cliente Documento", message: "Segue o documento que você pediu." },
+          { name: "Cliente Agenda", message: "Tem horário para amanhã?" },
         ];
 
         const example = examples[Math.floor(Math.random() * examples.length)];
 
         try {
-          const data = await apiPost('/api/simulate-message', {
+          const data = await apiPost("/api/simulate-message", {
             name: `${example.name} ${chats.length + 1}`,
             message: example.message,
           });
 
           chats.unshift(data.conversa);
           state.currentChat = 0;
-          state.currentView = 'today';
-          state.currentFilter = 'Todos';
-          setActiveChip('Todos');
+          state.currentView = "today";
+          state.currentFilter = "Todos";
+          setActiveChip("Todos");
 
-          document.getElementById('inboxTitle').textContent = 'Hoje no ZapLens';
-          document.getElementById('inboxSubtitle').textContent =
-            'Pendências que ainda precisam de ação.';
+          document.getElementById("inboxTitle").textContent = "Hoje no ZapLens";
+          document.getElementById("inboxSubtitle").textContent = "Pendências que ainda precisam de ação.";
 
           renderMenu();
           renderChatList();
           renderConversation();
         } catch (error) {
-          alert('Não foi possível registrar nova conversa: ' + error.message);
+          alert("Não foi possível registrar nova conversa: " + error.message);
         }
       }
 
       async function resetData() {
-        if (!confirm('Deseja limpar os dados da operação e reiniciar a base?'))
-          return;
+        if (!confirm("Deseja limpar os dados da operação e reiniciar a base?")) return;
 
         try {
-          await apiPost('/api/reset', {});
-          state.currentView = 'today';
-          state.currentFilter = 'Todos';
+          await apiPost("/api/reset", {});
+          state.currentView = "today";
+          state.currentFilter = "Todos";
           state.currentChat = 0;
-          setActiveChip('Todos');
+          setActiveChip("Todos");
           await carregarDadosDoBackend();
         } catch (error) {
-          alert('Não foi possível limpar os dados: ' + error.message);
+          alert("Não foi possível limpar os dados: " + error.message);
         }
       }
 
-      document.addEventListener('DOMContentLoaded', () => {
+
+      async function carregarStatusWhatsApp() {
+        try {
+          const statusData = await apiGet("/api/whatsapp/status");
+          const connectInfo = await apiGet("/api/whatsapp/connect-info");
+
+          whatsappStatus = statusData;
+          whatsappConnectInfo = connectInfo;
+
+          renderWhatsAppStatus();
+        } catch (error) {
+          console.error("Erro ao carregar status do WhatsApp:", error);
+          renderWhatsAppStatus({
+            error: "Não foi possível carregar o status da conexão.",
+          });
+        }
+      }
+
+      function renderWhatsAppStatus(options = {}) {
+        const pill = document.getElementById("waStatusPill");
+        const webhook = document.getElementById("waWebhookUrl");
+        const verify = document.getElementById("waVerifyToken");
+        const button = document.getElementById("connectWhatsAppBtn");
+
+        if (!pill || !webhook || !verify || !button) return;
+
+        const connected = Boolean(whatsappStatus?.connected);
+        const readyForEmbeddedSignup = Boolean(whatsappConnectInfo?.readyForEmbeddedSignup);
+
+        pill.classList.toggle("connected", connected);
+        pill.classList.toggle("disconnected", !connected);
+        pill.innerHTML = connected
+          ? '<span class="wa-status-dot"></span>Conectado'
+          : '<span class="wa-status-dot"></span>Não conectado';
+
+        webhook.textContent =
+          whatsappStatus?.meta?.webhookUrl ||
+          whatsappConnectInfo?.webhookUrl ||
+          "Webhook não carregado";
+
+        verify.textContent =
+          whatsappStatus?.meta?.verifyToken ||
+          whatsappConnectInfo?.verifyToken ||
+          "Token não carregado";
+
+        if (connected) {
+          button.textContent = "WhatsApp conectado";
+          button.disabled = true;
+          button.classList.add("btn-secondary");
+          button.classList.remove("btn-primary");
+          return;
+        }
+
+        button.disabled = !readyForEmbeddedSignup;
+        button.textContent = readyForEmbeddedSignup
+          ? "Conectar WhatsApp"
+          : "Configuração Meta pendente";
+
+        button.classList.toggle("btn-primary", readyForEmbeddedSignup);
+        button.classList.toggle("btn-secondary", !readyForEmbeddedSignup);
+
+        if (options.error) {
+          webhook.textContent = options.error;
+        }
+      }
+
+      function conectarWhatsApp() {
+        if (!whatsappConnectInfo?.readyForEmbeddedSignup) {
+          alert("A configuração da Meta ainda não está completa. Confira META_APP_ID e META_CONFIGURATION_ID no Railway.");
+          return;
+        }
+
+        const appId = whatsappConnectInfo.appId;
+        const configurationId = whatsappConnectInfo.configurationId;
+        const redirectUri = encodeURIComponent(whatsappConnectInfo.redirectUri);
+        const state = encodeURIComponent("empresa_demo");
+
+        const extras = encodeURIComponent(
+          JSON.stringify({
+            setup: {
+              solutionID: configurationId,
+            },
+          })
+        );
+
+        const url =
+          `https://www.facebook.com/v20.0/dialog/oauth` +
+          `?client_id=${appId}` +
+          `&redirect_uri=${redirectUri}` +
+          `&state=${state}` +
+          `&response_type=code` +
+          `&scope=whatsapp_business_management,whatsapp_business_messaging` +
+          `&extras=${extras}`;
+
+        window.location.href = url;
+      }
+
+
+      document.addEventListener("DOMContentLoaded", () => {
         fallbackData();
         renderMenu();
         renderChatList();
         renderConversation();
 
-        const companyBox = document.getElementById('companyNameBox');
+        const companyBox = document.getElementById("companyNameBox");
         if (companyBox) companyBox.textContent = companyName;
 
-        document
-          .getElementById('loginBtn')
-          ?.addEventListener('click', () => switchScreen('setupScreen'));
-        document
-          .getElementById('demoBtn')
-          ?.addEventListener('click', abrirPainel);
-        document
-          .getElementById('setupBtn')
-          ?.addEventListener('click', abrirPainel);
+        document.getElementById("loginBtn")?.addEventListener("click", () => switchScreen("setupScreen"));
+        document.getElementById("demoBtn")?.addEventListener("click", abrirPainel);
+        document.getElementById("setupBtn")?.addEventListener("click", abrirPainel);
 
-        document
-          .getElementById('logoutBtn')
-          ?.addEventListener('click', () => switchScreen('loginScreen'));
-        document
-          .getElementById('resetBtn')
-          ?.addEventListener('click', resetData);
-        document
-          .getElementById('simulateMessageBtn')
-          ?.addEventListener('click', createNewConversation);
+        document.getElementById("logoutBtn")?.addEventListener("click", () => switchScreen("loginScreen"));
+        document.getElementById("resetBtn")?.addEventListener("click", resetData);
+        document.getElementById("connectWhatsAppBtn")?.addEventListener("click", conectarWhatsApp);
+        document.getElementById("refreshWhatsAppStatusBtn")?.addEventListener("click", carregarStatusWhatsApp);
+        document.getElementById("simulateMessageBtn")?.addEventListener("click", createNewConversation);
 
-        document
-          .getElementById('sendBtn')
-          ?.addEventListener('click', sendCurrentMessage);
+        document.getElementById("sendBtn")?.addEventListener("click", sendCurrentMessage);
 
-        document
-          .getElementById('replyInput')
-          ?.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' && !event.shiftKey) {
-              event.preventDefault();
-              sendCurrentMessage();
-            }
+        document.getElementById("replyInput")?.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            sendCurrentMessage();
+          }
+        });
+
+        document.getElementById("scheduleBtn")?.addEventListener("click", scheduleCurrentReturn);
+        document.getElementById("closeDealBtn")?.addEventListener("click", closeCurrentDeal);
+        document.getElementById("quickResolveBtn")?.addEventListener("click", resolveCurrentConversation);
+        document.getElementById("quickReturnBtn")?.addEventListener("click", scheduleCurrentReturn);
+        document.getElementById("quickCloseBtn")?.addEventListener("click", closeCurrentDeal);
+
+        document.getElementById("quickChargeBtn")?.addEventListener("click", () => {
+          setFastTrack("Cobrança", "Aguardando pagamento", "Cobrar cliente", "Hoje às 18h", "yellow");
+        });
+
+        document.getElementById("quickDocBtn")?.addEventListener("click", () => {
+          setFastTrack("Documento", "Documento pendente", "Solicitar documento", "Amanhã", "blue");
+        });
+
+        document.getElementById("quickTransferBtn")?.addEventListener("click", () => {
+          const chat = chats[state.currentChat];
+          if (!chat) return;
+
+          updateCurrentConversation({
+            owner: chat.owner === "Ana" ? "Carlos" : "Ana",
+            status: "Transferido",
+            action: "Novo responsável deve assumir",
+            risk: "Aguardando novo responsável",
           });
+        });
 
-        document
-          .getElementById('scheduleBtn')
-          ?.addEventListener('click', scheduleCurrentReturn);
-        document
-          .getElementById('closeDealBtn')
-          ?.addEventListener('click', closeCurrentDeal);
-        document
-          .getElementById('quickResolveBtn')
-          ?.addEventListener('click', resolveCurrentConversation);
-        document
-          .getElementById('quickReturnBtn')
-          ?.addEventListener('click', scheduleCurrentReturn);
-        document
-          .getElementById('quickCloseBtn')
-          ?.addEventListener('click', closeCurrentDeal);
+        document.getElementById("useSuggestionBtn")?.addEventListener("click", () => {
+          const input = document.getElementById("replyInput");
+          input.value = document.getElementById("suggestionText").textContent;
+          input.focus();
+        });
 
-        document
-          .getElementById('quickChargeBtn')
-          ?.addEventListener('click', () => {
-            setFastTrack(
-              'Cobrança',
-              'Aguardando pagamento',
-              'Cobrar cliente',
-              'Hoje às 18h',
-              'yellow'
-            );
-          });
-
-        document
-          .getElementById('quickDocBtn')
-          ?.addEventListener('click', () => {
-            setFastTrack(
-              'Documento',
-              'Documento pendente',
-              'Solicitar documento',
-              'Amanhã',
-              'blue'
-            );
-          });
-
-        document
-          .getElementById('quickTransferBtn')
-          ?.addEventListener('click', () => {
-            const chat = chats[state.currentChat];
-            if (!chat) return;
-
-            updateCurrentConversation({
-              owner: chat.owner === 'Ana' ? 'Carlos' : 'Ana',
-              status: 'Transferido',
-              action: 'Novo responsável deve assumir',
-              risk: 'Aguardando novo responsável',
-            });
-          });
-
-        document
-          .getElementById('useSuggestionBtn')
-          ?.addEventListener('click', () => {
-            const input = document.getElementById('replyInput');
-            input.value = document.getElementById('suggestionText').textContent;
-            input.focus();
-          });
-
-        document.querySelectorAll('.chip').forEach((chip) => {
-          chip.addEventListener('click', () => {
-            document
-              .querySelectorAll('.chip')
-              .forEach((item) => item.classList.remove('active'));
-            chip.classList.add('active');
+        document.querySelectorAll(".chip").forEach((chip) => {
+          chip.addEventListener("click", () => {
+            document.querySelectorAll(".chip").forEach((item) => item.classList.remove("active"));
+            chip.classList.add("active");
             state.currentFilter = chip.dataset.filter;
             renderChatList();
           });
         });
 
-        document
-          .getElementById('searchInput')
-          ?.addEventListener('input', renderChatList);
-        document
-          .getElementById('closeModalBtn')
-          ?.addEventListener('click', closeModal);
-        document.getElementById('modal')?.addEventListener('click', (event) => {
-          if (event.target.id === 'modal') closeModal();
+        document.getElementById("searchInput")?.addEventListener("input", renderChatList);
+        document.getElementById("closeModalBtn")?.addEventListener("click", closeModal);
+        document.getElementById("modal")?.addEventListener("click", (event) => {
+          if (event.target.id === "modal") closeModal();
         });
 
         carregarDadosDoBackend();
+        carregarStatusWhatsApp();
         setInterval(carregarDadosDoBackend, 8000);
+        setInterval(carregarStatusWhatsApp, 15000);
       });
     </script>
+
   </body>
 </html>
