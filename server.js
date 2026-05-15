@@ -537,6 +537,29 @@ async function configurarAssinaturaAppWhatsApp(fields = 'messages') {
   });
 }
 
+async function registrarNumeroCloudApi(connection, pin) {
+  if (!connection?.businessToken || !connection?.phoneNumberId) {
+    throw new Error('Conexão sem businessToken ou phoneNumberId.');
+  }
+
+  const pinLimpo = String(pin || '').replace(/\D/g, '');
+
+  if (!/^\d{6}$/.test(pinLimpo)) {
+    throw new Error('Informe um PIN de 6 dígitos. Exemplo: ?pin=202626');
+  }
+
+  const result = await graphPost(
+    `/${connection.phoneNumberId}/register`,
+    connection.businessToken,
+    {
+      messaging_product: 'whatsapp',
+      pin: pinLimpo,
+    }
+  );
+
+  return result;
+}
+
 async function enviarMensagemTesteViaApi(connection, to, message) {
   if (!connection?.businessToken || !connection?.phoneNumberId) {
     throw new Error('Conexão sem businessToken ou phoneNumberId.');
@@ -1697,6 +1720,49 @@ async function executarPlatformSetup(empresaId = 'empresa_demo') {
   return resultado;
 }
 
+async function executarRegisterPhone(empresaId = 'empresa_demo', query = {}) {
+  const connection = buscarConexaoAtiva(empresaId);
+
+  const resultado = {
+    success: true,
+    checkedAt: agoraIso(),
+    empresaId,
+    pinUsed: Boolean(query.pin),
+    connection: montarConexaoSegura(connection),
+    result: null,
+    error: null,
+    conclusion: '',
+  };
+
+  if (!connection) {
+    resultado.success = false;
+    resultado.error = 'Nenhuma conexão ativa encontrada.';
+    resultado.conclusion = 'Conecte o WhatsApp antes de tentar registrar o número.';
+    return resultado;
+  }
+
+  try {
+    resultado.result = await registrarNumeroCloudApi(connection, query.pin);
+
+    resultado.conclusion =
+      'Tentativa de registro enviada para a Meta. Agora rode /api/whatsapp/test-send para validar envio.';
+  } catch (error) {
+    resultado.success = false;
+    resultado.error = erroParaJson(error);
+    resultado.conclusion =
+      'Falha ao registrar número. O erro da Meta vai indicar se é PIN, permissão, número em outra conta, On-Premise ou falta de verificação.';
+  }
+
+  registrarMetaEvent('register_phone', {
+    empresaId,
+    success: resultado.success,
+    error: resultado.error,
+    result: resultado.result,
+  });
+
+  return resultado;
+}
+
 async function executarTestSend(empresaId = 'empresa_demo', query = {}) {
   const connection = buscarConexaoAtiva(empresaId);
 
@@ -1755,7 +1821,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'online',
     app: 'ZapLens MVP',
-    build: 'platform-routes-v2',
+    build: 'platform-routes-v3-register-phone',
     port: PORT,
     db: fs.existsSync(DB_PATH),
     publicAppUrl: PUBLIC_APP_URL,
@@ -1764,6 +1830,7 @@ app.get('/health', (req, res) => {
     webhookUrl: WEBHOOK_URL,
     platformDiagnosticsUrl: `${PUBLIC_APP_URL}/api/whatsapp/platform-diagnostics`,
     platformSetupUrl: `${PUBLIC_APP_URL}/api/whatsapp/platform-setup`,
+    registerPhoneUrl: `${PUBLIC_APP_URL}/api/whatsapp/register-phone?pin=202626`,
     testSendUrl: `${PUBLIC_APP_URL}/api/whatsapp/test-send?to=5548999999999`,
   });
 });
@@ -2172,6 +2239,26 @@ app.post('/api/whatsapp/platform-setup', async (req, res) => {
   }
 });
 
+app.get('/api/whatsapp/register-phone', async (req, res) => {
+  try {
+    const empresaId = normalizarEmpresaId(req.query.empresaId || 'empresa_demo');
+
+    const result = await executarRegisterPhone(empresaId, {
+      pin: req.query.pin,
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('Erro em register-phone:', error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      details: error.details || null,
+    });
+  }
+});
+
 app.get('/api/whatsapp/test-send', async (req, res) => {
   try {
     const empresaId = normalizarEmpresaId(req.query.empresaId || 'empresa_demo');
@@ -2337,7 +2424,7 @@ app.post('/webhook', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Servidor ZapLens rodando na porta ${PORT}`);
-  console.log(`Build: platform-routes-v2`);
+  console.log(`Build: platform-routes-v3-register-phone`);
   console.log(`Painel: http://localhost:${PORT}`);
   console.log(`API: http://localhost:${PORT}/api/conversations`);
   console.log(`Webhook: ${WEBHOOK_URL}`);
@@ -2345,5 +2432,6 @@ app.listen(PORT, () => {
   console.log(`Diagnóstico webhook: ${PUBLIC_APP_URL}/api/meta/webhook-diagnostics`);
   console.log(`Diagnóstico plataforma: ${PUBLIC_APP_URL}/api/whatsapp/platform-diagnostics`);
   console.log(`Setup plataforma: ${PUBLIC_APP_URL}/api/whatsapp/platform-setup`);
+  console.log(`Registrar número: ${PUBLIC_APP_URL}/api/whatsapp/register-phone?pin=202626`);
   console.log(`Teste envio: ${PUBLIC_APP_URL}/api/whatsapp/test-send?to=5548999999999`);
 });
