@@ -1755,12 +1755,16 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'online',
     app: 'ZapLens MVP',
+    build: 'platform-routes-v2',
     port: PORT,
     db: fs.existsSync(DB_PATH),
     publicAppUrl: PUBLIC_APP_URL,
     graphVersion: META_GRAPH_VERSION,
     oauthRedirectUri: OAUTH_REDIRECT_URI,
     webhookUrl: WEBHOOK_URL,
+    platformDiagnosticsUrl: `${PUBLIC_APP_URL}/api/whatsapp/platform-diagnostics`,
+    platformSetupUrl: `${PUBLIC_APP_URL}/api/whatsapp/platform-setup`,
+    testSendUrl: `${PUBLIC_APP_URL}/api/whatsapp/test-send?to=5548999999999`,
   });
 });
 
@@ -2333,6 +2337,7 @@ app.post('/webhook', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Servidor ZapLens rodando na porta ${PORT}`);
+  console.log(`Build: platform-routes-v2`);
   console.log(`Painel: http://localhost:${PORT}`);
   console.log(`API: http://localhost:${PORT}/api/conversations`);
   console.log(`Webhook: ${WEBHOOK_URL}`);
