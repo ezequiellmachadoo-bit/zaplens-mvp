@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZapLens | Organização inteligente para conversas comerciais</title>
+    <meta
+      name="description"
+      content="ZapLens é uma plataforma para organizar, acompanhar e priorizar conversas comerciais do WhatsApp, ajudando empresas a não perderem clientes, orçamentos e oportunidades."
+    />
+
+    <style>
+      :root {
+        --primary: #0f766e;
+        --primary-dark: #115e59;
+        --accent: #14b8a6;
+        --text: #0f172a;
+        --muted: #64748b;
+        --bg: #f8fafc;
+        --card: #ffffff;
+        --border: #e2e8f0;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          Inter,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          Arial,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      header {
+        background: #ffffff;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .container {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+
+      .nav {
+        min-height: 72px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 900;
+        font-size: 24px;
+        letter-spacing: -0.04em;
+      }
+
+      .brand-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #0f766e, #2563eb);
+        color: #ffffff;
+        font-weight: 900;
+        box-shadow: 0 12px 28px rgba(15, 118, 110, 0.22);
+      }
+
+      .brand span:last-child {
+        color: var(--accent);
+      }
+
+      .nav a {
+        color: var(--muted);
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 14px;
+      }
+
+      .hero {
+        padding: 72px 0 56px;
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 40px;
+        align-items: center;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border: 1px solid rgba(20, 184, 166, 0.25);
+        border-radius: 999px;
+        background: rgba(20, 184, 166, 0.08);
+        color: var(--primary-dark);
+        font-weight: 800;
+        font-size: 13px;
+      }
+
+      h1 {
+        margin: 20px 0 18px;
+        font-size: clamp(38px, 6vw, 64px);
+        line-height: 0.96;
+        letter-spacing: -0.07em;
+      }
+
+      .hero p {
+        margin: 0;
+        max-width: 650px;
+        color: var(--muted);
+        font-size: 19px;
+        line-height: 1.65;
+      }
+
+      .cta-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 28px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 48px;
+        padding: 0 20px;
+        border-radius: 14px;
+        font-weight: 900;
+        text-decoration: none;
+        border: 1px solid transparent;
+      }
+
+      .btn-primary {
+        background: var(--primary);
+        color: #ffffff;
+        box-shadow: 0 16px 30px rgba(15, 118, 110, 0.22);
+      }
+
+      .btn-secondary {
+        color: var(--primary-dark);
+        background: #ffffff;
+        border-color: var(--border);
+      }
+
+      .mockup {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        padding: 20px;
+        box-shadow: 0 28px 70px rgba(15, 23, 42, 0.1);
+      }
+
+      .mockup-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #cbd5e1;
+      }
+
+      .mockup-card {
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 16px;
+        margin-bottom: 12px;
+        background: #f8fafc;
+      }
+
+      .mockup-card strong {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--text);
+      }
+
+      .mockup-card p {
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .tag {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(15, 118, 110, 0.1);
+        color: var(--primary-dark);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      section {
+        padding: 42px 0;
+      }
+
+      .section-title {
+        max-width: 760px;
+        margin-bottom: 28px;
+      }
+
+      .section-title h2 {
+        margin: 0 0 10px;
+        font-size: clamp(28px, 4vw, 42px);
+        letter-spacing: -0.05em;
+      }
+
+      .section-title p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.6;
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        padding: 24px;
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.04);
+      }
+
+      .card-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        background: rgba(20, 184, 166, 0.12);
+        color: var(--primary-dark);
+        font-weight: 900;
+        margin-bottom: 18px;
+      }
+
+      .card h3 {
+        margin: 0 0 10px;
+        font-size: 19px;
+        letter-spacing: -0.03em;
+      }
+
+      .card p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .info-box {
+        background: #0f172a;
+        color: #ffffff;
+        border-radius: 28px;
+        padding: 32px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        align-items: center;
+      }
+
+      .info-box h2 {
+        margin: 0 0 12px;
+        font-size: 34px;
+        letter-spacing: -0.05em;
+      }
+
+      .info-box p {
+        margin: 0;
+        color: #cbd5e1;
+        line-height: 1.65;
+      }
+
+      .company-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .company-list div {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 16px;
+        padding: 14px;
+        color: #e2e8f0;
+      }
+
+      footer {
+        padding: 32px 0;
+        border-top: 1px solid var(--border);
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      footer .footer-grid {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      footer a {
+        color: var(--primary-dark);
+        font-weight: 800;
+        text-decoration: none;
+      }
+
+      @media (max-width: 860px) {
+        .hero {
+          padding-top: 44px;
+        }
+
+        .hero-grid,
+        .info-box {
+          grid-template-columns: 1fr;
+        }
+
+        .cards {
+          grid-template-columns: 1fr;
+        }
+
+        .nav {
+          align-items: flex-start;
+          flex-direction: column;
+          padding: 16px 0;
+        }
+
+        h1 {
+          font-size: 42px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <div class="container nav">
+        <div class="brand">
+          <div class="brand-icon">ZL</div>
+          <div>Zap <span>Lens</span></div>
+        </div>
+
+        <nav>
+          <a href="#solucao">Solução</a>
+          &nbsp;&nbsp;
+          <a href="#empresa">Empresa</a>
+          &nbsp;&nbsp;
+          <a href="mailto:ezequiellmachadoo@gmail.com">Contato</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="container hero-grid">
+          <div>
+            <div class="badge">Plataforma para atendimento e organização comercial</div>
+
+            <h1>Organize conversas, oportunidades e pendências do WhatsApp.</h1>
+
+            <p>
+              O ZapLens ajuda empresas a acompanhar conversas comerciais, identificar
+              clientes sem resposta, priorizar orçamentos, registrar fechamentos e
+              transformar atendimentos em uma rotina mais clara e organizada.
+            </p>
+
+            <div class="cta-row">
+              <a class="btn btn-primary" href="https://zaplens-mvp-production.up.railway.app">
+                Acessar plataforma
+              </a>
+              <a class="btn btn-secondary" href="mailto:ezequiellmachadoo@gmail.com">
+                Falar com o responsável
+              </a>
+            </div>
+          </div>
+
+          <div class="mockup" aria-label="Prévia do painel ZapLens">
+            <div class="mockup-top">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </div>
+
+            <div class="mockup-card">
+              <strong>Cliente aguardando orçamento</strong>
+              <p>
+                Conversa parada há 2h. Oportunidade com valor potencial e próxima ação
+                recomendada.
+              </p>
+              <span class="tag">Prioridade alta</span>
+            </div>
+
+            <div class="mockup-card">
+              <strong>Resumo inteligente</strong>
+              <p>
+                O cliente pediu orçamento e ainda não recebeu proposta. Próxima ação:
+                enviar orçamento.
+              </p>
+              <span class="tag">Acompanhamento</span>
+            </div>
+
+            <div class="mockup-card">
+              <strong>Resposta sugerida</strong>
+              <p>
+                Mensagem pronta para continuar o atendimento de forma clara, rápida e
+                profissional.
+              </p>
+              <span class="tag">Atendimento comercial</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="solucao">
+        <div class="container">
+          <div class="section-title">
+            <h2>O que o ZapLens faz</h2>
+            <p>
+              A plataforma foi criada para apoiar empresas que usam WhatsApp como canal
+              principal de atendimento, vendas, orçamento, cobrança e acompanhamento.
+            </p>
+          </div>
+
+          <div class="cards">
+            <article class="card">
+              <div class="card-icon">1</div>
+              <h3>Organiza conversas</h3>
+              <p>
+                Separa atendimentos por categoria, status, prioridade, responsável e
+                próxima ação.
+              </p>
+            </article>
+
+            <article class="card">
+              <div class="card-icon">2</div>
+              <h3>Evita oportunidades perdidas</h3>
+              <p>
+                Ajuda a identificar clientes sem resposta, orçamentos parados e
+                pendências que precisam de retorno.
+              </p>
+            </article>
+
+            <article class="card">
+              <div class="card-icon">3</div>
+              <h3>Apoia o atendimento</h3>
+              <p>
+                Gera resumo da conversa, risco, sugestão de resposta e acompanhamento
+                até a conclusão.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="empresa">
+        <div class="container">
+          <div class="info-box">
+            <div>
+              <h2>Sobre a empresa</h2>
+              <p>
+                ZapLens é uma solução digital em desenvolvimento para melhorar a gestão
+                de conversas comerciais no WhatsApp, com foco em clareza operacional,
+                produtividade e acompanhamento de oportunidades.
+              </p>
+            </div>
+
+            <div class="company-list">
+              <div><strong>Nome:</strong> ZapLens</div>
+              <div><strong>Categoria:</strong> Software / Serviços digitais</div>
+              <div><strong>País:</strong> Brasil</div>
+              <div><strong>Contato:</strong> ezequiellmachadoo@gmail.com</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="container footer-grid">
+        <div>© 2026 ZapLens. Todos os direitos reservados.</div>
+        <div>
+          <a href="mailto:ezequiellmachadoo@gmail.com">Contato</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
